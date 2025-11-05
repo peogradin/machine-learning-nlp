@@ -139,6 +139,7 @@ class A1Tokenizer:
 ### Part 3. Defining the model.
 ###
 
+# %%
 class A1RNNModelConfig(PretrainedConfig):
     """Configuration object that stores hyperparameters that define the RNN-based language model."""
     def __init__(self, vocab_size=None, embedding_size=None, hidden_size=None, **kwargs):
@@ -153,9 +154,12 @@ class A1RNNModel(PreTrainedModel):
     
     def __init__(self, config):
         super().__init__(config)
-        self.embedding = ...
-        self.rnn = ...
-        self.unembedding = ...
+        self.embedding = nn.Embedding(config.vocab_size, config.embedding_size)
+        self.rnn = nn.LSTM(
+            input_size=config.embedding_size, 
+            hidden_size=config.hidden_size, 
+            batch_first=True)
+        self.unembedding = nn.Linear(config.hidden_size, config.vocab_size)
         
     def forward(self, X):
         """The forward pass of the RNN-based language model.
@@ -165,11 +169,23 @@ class A1RNNModel(PreTrainedModel):
            Returns:
              The output tensor (3D), consisting of logits for all token positions for all vocabulary items.
         """
-        embedded = ...
-        rnn_out, _ = ...
-        out = ...
+        embedded = self.embedding(X)        # (B, N, E)
+        rnn_out, _ = self.rnn(embedded)     # (B, N, H)
+        out = self.unembedding(rnn_out)     # (B, N, V)
         return out
 
+config = A1RNNModelConfig(
+    vocab_size=1000,
+    embedding_size=128,
+    hidden_size=256
+)
+model = A1RNNModel(config)
+
+# Test case
+X = torch.tensor([[1, 33, 54, 99]])
+out = model(X)
+print(out.shape)
+# %%
 
 ###
 ### Part 4. Training the language model.
