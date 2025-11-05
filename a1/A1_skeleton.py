@@ -31,7 +31,7 @@ def build_tokenizer(train_file, tokenize_fun=lowercase_tokenizer, max_voc_size=N
 
     # TODO: build the vocabulary, possibly truncating it to max_voc_size if that is specified.
     # Then return a tokenizer object (implemented below).
-    vocabulary_dict = {
+    vocabulary = {
         pad_token: 0,
         unk_token: 1,
         bos_token: 2,
@@ -40,28 +40,50 @@ def build_tokenizer(train_file, tokenize_fun=lowercase_tokenizer, max_voc_size=N
     token_counts = Counter()
     with open(train_file, "r", errors='ignore') as file:
 
-
         for line in file:
             line = line.strip()
             if not line:
                 continue
             token_counts.update(tokenize_fun(line))
 
-    remaining = max_voc_size - len(vocabulary_dict) if max_voc_size else None
+    remaining = max_voc_size - len(vocabulary) if max_voc_size else None
     
+    most_common = token_counts.most_common(remaining) if remaining else token_counts.most_common()
+    total_counts = token_counts.total()
+    cut_off = 20
+
+    for word, count in most_common:
+        if count < cut_off:
+            break
+        if word not in vocabulary:
+            vocabulary[word] = len(vocabulary)
+    
+    # print(f"Total token counts = {total_counts}")
+    # print(f"Vocabulary length = {len(vocabulary)} \t Total unique tokens = {len(token_counts.items())}")
+    # print(f"Least common tokens in vocabulary: \n{list(vocabulary.keys())[-200:]}")
+    # print(f"Least common tokens in text: \n{token_counts.most_common()[:-200-1:-1]}")
+
+    inv_vocabulary = {i: tok for tok, i in vocabulary}
+
+    tokenizer = A1Tokenizer(pad_token, unk_token, bos_token, eos_token, model_max_length, vocabulary, inv_vocabulary)
+
 
 train_file = "train.txt"
-print(train_file)
 build_tokenizer(train_file=train_file)
 # %%
 
 class A1Tokenizer:
     """A minimal implementation of a tokenizer similar to tokenizers in the HuggingFace library."""
 
-    def __init__(self, SOMETHING):
+    def __init__(self, pad_token, unk_token, bos_token, eos_token, model_max_length, vocabulary, inv_vocabulary):
         # TODO: store all values you need in order to implement __call__ below.
-        self.pad_token_id = ...     # Compulsory attribute.
-        self.model_max_length = ... # Needed for truncation.
+        self.pad_token_id = vocabulary[pad_token]     # Compulsory attribute.
+        self.unk_token_id = vocabulary[unk_token]
+        self.bos_token_id = vocabulary[bos_token]
+        self.eos_token_id = vocabulary[eos_token]
+        self.model_max_length = model_max_length # Needed for truncation.
+        self.vocabulary = vocabulary
+        self.inv_vocabulary = inv_vocabulary
 
     def __call__(self, texts, truncation=False, padding=False, return_tensors=None):
         """Tokenize the given texts and return a BatchEncoding containing the integer-encoded tokens.
@@ -92,6 +114,9 @@ class A1Tokenizer:
         # Optionally, if you want to be 100% HuggingFace-compatible, you should also include an 
         # attention mask of the same shape as input_ids. In this mask, padding tokens correspond
         # to the the value 0 and real tokens to the value 1.
+
+        
+
         return BatchEncoding({'input_ids': ...})
 
     def __len__(self):
