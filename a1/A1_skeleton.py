@@ -58,12 +58,12 @@ def build_tokenizer(train_file, tokenize_fun=lowercase_tokenizer, max_voc_size=N
         if word not in vocabulary:
             vocabulary[word] = len(vocabulary)
     
-    # print(f"Total token counts = {total_counts}")
-    # print(f"Vocabulary length = {len(vocabulary)} \t Total unique tokens = {len(token_counts.items())}")
-    # print(f"Least common tokens in vocabulary: \n{list(vocabulary.keys())[-200:]}")
-    # print(f"Least common tokens in text: \n{token_counts.most_common()[:-200-1:-1]}")
+    print(f"Total token counts = {total_counts}")
+    print(f"Vocabulary length = {len(vocabulary)} \t Total unique tokens = {len(token_counts.items())}")
+    print(f"Least common tokens in vocabulary: \n{list(vocabulary.keys())[-200:]}")
+    print(f"Least common tokens in text: \n{token_counts.most_common()[:-200-1:-1]}")
 
-    inv_vocabulary = {i: tok for tok, i in vocabulary}
+    inv_vocabulary = {i: tok for tok, i in vocabulary.items()}
 
     tokenizer = A1Tokenizer(pad_token, unk_token, bos_token, eos_token, model_max_length, vocabulary, inv_vocabulary)
 
@@ -115,7 +115,7 @@ class A1Tokenizer:
         # attention mask of the same shape as input_ids. In this mask, padding tokens correspond
         # to the the value 0 and real tokens to the value 1.
 
-        
+
 
         return BatchEncoding({'input_ids': ...})
 
