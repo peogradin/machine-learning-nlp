@@ -1,4 +1,4 @@
-
+# %%
 import torch, nltk, pickle
 from torch import nn
 from collections import Counter
@@ -7,7 +7,7 @@ from transformers import BatchEncoding, PretrainedConfig, PreTrainedModel
 from torch.utils.data import DataLoader
 import numpy as np
 import sys, time, os
-
+# %%
 ###
 ### Part 1. Tokenization.
 ###
@@ -31,7 +31,29 @@ def build_tokenizer(train_file, tokenize_fun=lowercase_tokenizer, max_voc_size=N
 
     # TODO: build the vocabulary, possibly truncating it to max_voc_size if that is specified.
     # Then return a tokenizer object (implemented below).
-    ...
+    vocabulary_dict = {
+        pad_token: 0,
+        unk_token: 1,
+        bos_token: 2,
+        eos_token: 3,
+    }
+    token_counts = Counter()
+    with open(train_file, "r", errors='ignore') as file:
+
+
+        for line in file:
+            line = line.strip()
+            if not line:
+                continue
+            token_counts.update(tokenize_fun(line))
+
+    remaining = max_voc_size - len(vocabulary_dict) if max_voc_size else None
+    
+
+train_file = "train.txt"
+print(train_file)
+build_tokenizer(train_file=train_file)
+# %%
 
 class A1Tokenizer:
     """A minimal implementation of a tokenizer similar to tokenizers in the HuggingFace library."""
