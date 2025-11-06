@@ -115,7 +115,10 @@ class A1Tokenizer:
         # Optionally, if you want to be 100% HuggingFace-compatible, you should also include an 
         # attention mask of the same shape as input_ids. In this mask, padding tokens correspond
         # to the the value 0 and real tokens to the value 1.
-
+        
+        if len(texts) > 0 and isinstance(texts[0], str):
+            texts = [texts]
+        
         attention_mask = []
         input_ids = []
 
@@ -318,8 +321,11 @@ class A1Trainer:
                 #       PREPROCESSING AND FORWARD PASS:
                 #       input_ids = apply your tokenizer to B
                 input_ids = self.tokenizer(
-                    batch["text"], truncation=True, padding=True, return_tensors="pt"
+                    batch["text"], truncation=False, padding=True, return_tensors="pt"
                 )["input_ids"]
+                print(isinstance(batch["text"][0], str))
+                print(batch["text"][0])
+                print(len(batch["text"][0]), len(batch["text"]))
                 #       X = all columns in input_ids except the last one
                 #       Y = all columns in input_ids except the first one
                 #       put X and Y onto the GPU (or whatever device you use)
@@ -328,8 +334,9 @@ class A1Trainer:
                 #       apply the model to X
                 outputs = self.model(X)
                 #       compute the loss for the model output and Y
-                targets = Y.view(-1)  # 2-dimensional -> 1-dimensional
-                logits = outputs.view(
+                print(Y.shape, Y)
+                targets = Y.reshape(-1)  # 2-dimensional -> 1-dimensional
+                logits = outputs.reshape(
                     -1, outputs.shape[-1]
                 )  # 3-dimensional -> 2-dimensional
                 loss = loss_func(logits, targets)
@@ -349,7 +356,7 @@ class A1Trainer:
                         for batch in val_loader:
                             input_ids = self.tokenizer(
                                 batch["text"],
-                                truncation=True,
+                                truncation=False,
                                 padding=True,
                                 return_tensors="pt",
                             )["input_ids"]
@@ -358,8 +365,8 @@ class A1Trainer:
 
                             outputs = self.model(X)
 
-                            targets = Y.view(-1)  # 2-dimensional -> 1-dimensional
-                            logits = outputs.view(
+                            targets = Y.reshape(-1)  # 2-dimensional -> 1-dimensional
+                            logits = outputs.reshape(
                                 -1, outputs.shape[-1]
                             )  # 3-dimensional -> 2-dimensional
                             loss = loss_func(logits, targets)
@@ -409,6 +416,7 @@ if __name__ == "__main__":
         num_train_epochs=3,
         per_device_train_batch_size=32,
         per_device_eval_batch_size=32,
+        optim="adamw_torch",
         learning_rate=5e-4,
         weight_decay=0.01,
         eval_strategy="epoch",
@@ -430,3 +438,4 @@ if __name__ == "__main__":
     print("Trained model saved successfully.")
 
 # %%
+print(tokenizer.model_max_length)
