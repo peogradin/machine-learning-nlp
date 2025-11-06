@@ -58,29 +58,30 @@ def build_tokenizer(train_file, tokenize_fun=lowercase_tokenizer, max_voc_size=N
         if word not in vocabulary:
             vocabulary[word] = len(vocabulary)
     
-    print(f"Total token counts = {total_counts}")
-    print(f"Vocabulary length = {len(vocabulary)} \t Total unique tokens = {len(token_counts.items())}")
-    print(f"Least common tokens in vocabulary: \n{list(vocabulary.keys())[-200:]}")
-    print(f"Least common tokens in text: \n{token_counts.most_common()[:-200-1:-1]}")
+    # print(f"Total token counts = {total_counts}")
+    # print(f"Vocabulary length = {len(vocabulary)} \t Total unique tokens = {len(token_counts.items())}")
+    # print(f"Least common tokens in vocabulary: \n{list(vocabulary.keys())[-200:]}")
+    # print(f"Least common tokens in text: \n{token_counts.most_common()[:-200-1:-1]}")
 
     inv_vocabulary = {i: tok for tok, i in vocabulary.items()}
 
-    tokenizer = A1Tokenizer(pad_token, unk_token, bos_token, eos_token, model_max_length, vocabulary, inv_vocabulary)
+    tokenizer = A1Tokenizer(pad_token, unk_token, bos_token, eos_token, tokenize_fun, model_max_length, vocabulary, inv_vocabulary)
+    return tokenizer
 
-
-train_file = "train.txt"
-build_tokenizer(train_file=train_file)
+# train_file = "train.txt"
+# build_tokenizer(train_file=train_file)
 # %%
 
 class A1Tokenizer:
     """A minimal implementation of a tokenizer similar to tokenizers in the HuggingFace library."""
 
-    def __init__(self, pad_token, unk_token, bos_token, eos_token, model_max_length, vocabulary, inv_vocabulary):
+    def __init__(self, pad_token, unk_token, bos_token, eos_token, tokenize_fun, model_max_length, vocabulary, inv_vocabulary):
         # TODO: store all values you need in order to implement __call__ below.
         self.pad_token_id = vocabulary[pad_token]     # Compulsory attribute.
         self.unk_token_id = vocabulary[unk_token]
         self.bos_token_id = vocabulary[bos_token]
         self.eos_token_id = vocabulary[eos_token]
+        self.tokenize_fun = tokenize_fun
         self.model_max_length = model_max_length # Needed for truncation.
         self.vocabulary = vocabulary
         self.inv_vocabulary = inv_vocabulary
@@ -115,13 +116,47 @@ class A1Tokenizer:
         # attention mask of the same shape as input_ids. In this mask, padding tokens correspond
         # to the the value 0 and real tokens to the value 1.
 
+        attention_mask = []
+        input_ids = []
 
+        for text in texts:
+            for sentence in text:
+                tokens = self.tokenize_fun(sentence)
+                ids = [self.vocabulary.get(token, self.unk_token_id) for token in tokens]
+                if truncation:
+                    if not self.model_max_length:
+                        raise ValueError('truncation=True but model_max_length=None')
+                    ids = ids[:self.model_max_length-2]
+                ids = [self.bos_token_id] + ids + [self.eos_token_id]
+                attentions = [1] * len(ids)
+                attention_mask.append(attentions)
+                input_ids.append(ids)
 
-        return BatchEncoding({'input_ids': ...})
+        if not padding:
+            if return_tensors == True:
+                raise ValueError("return_tensors=True but padding=False")
+            return BatchEncoding({'attention_mask': attention_mask, 'input_ids': input_ids})
+
+        max_length = max(len(ids) for ids in input_ids)
+        target_length = min(max_length, self.model_max_length) if self.model_max_length and truncation else max_length
+        padded_ids = []
+        padded_attention_mask = []
+        for ids, attention in zip(input_ids, attention_mask):
+            pad_len = max(0, target_length - len(ids))
+            padded_ids.append(ids + [self.pad_token_id] * pad_len)
+            padded_attention_mask.append(attention + [0] * pad_len)
+
+        if return_tensors:
+            return {
+                "attention_mask": torch.tensor(padded_attention_mask, dtype=torch.long),
+                "input_ids": torch.tensor(padded_ids, dtype=torch.long)
+            }
+        
+        return BatchEncoding({'attention_mask': padded_attention_mask,'input_ids': padded_ids})
 
     def __len__(self):
         """Return the size of the vocabulary."""
-        return ...
+        return len(self.vocabulary)
     
     def save(self, filename):
         """Save the tokenizer to the given file."""
@@ -134,7 +169,14 @@ class A1Tokenizer:
         with open(filename, 'rb') as f:
             return pickle.load(f)
    
+tokenizer = build_tokenizer("val.txt", lowercase_tokenizer)
+test_texts = [['This is a test.', 'Another test.']]
 
+encoding = tokenizer(test_texts, return_tensors='pt', padding=True)
+
+# %%
+
+# %%
 ###
 ### Part 3. Defining the model.
 ###
