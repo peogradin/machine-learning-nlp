@@ -133,7 +133,7 @@ class A1Tokenizer:
                 input_ids.append(ids)
 
         if not padding:
-            if return_tensors == True:
+            if return_tensors:
                 raise ValueError("return_tensors=True but padding=False")
             return BatchEncoding({'attention_mask': attention_mask, 'input_ids': input_ids})
 
@@ -169,13 +169,15 @@ class A1Tokenizer:
         with open(filename, 'rb') as f:
             return pickle.load(f)
    
-tokenizer = build_tokenizer("val.txt", lowercase_tokenizer)
-test_texts = [['This is a test.', 'Another test.']]
-
-encoding = tokenizer(test_texts, return_tensors='pt', padding=True)
+# tokenizer = build_tokenizer("val.txt", lowercase_tokenizer)
+# test_texts = [['This is a test.', 'Another test.']]
+# tokenizer.save("tokenizer.pkl")
+# tokenizer2 = A1Tokenizer.from_file("tokenizer.pkl")
+# encoding = tokenizer2(test_texts, truncation=False, return_tensors='pt', padding=True)
 
 # %%
-
+# print(encoding["input_ids"])
+# print(encoding["attention_mask"])
 # %%
 ###
 ### Part 3. Defining the model.
@@ -386,7 +388,7 @@ if __name__ == "__main__":
     print("Model initialized successfully.")
 
     TRAIN_FILE = "train.txt"
-    VAL_FILE = "valid.txt"
+    VAL_FILE = "val.txt"
     from datasets import load_dataset
 
     dataset = load_dataset("text", data_files={"train": TRAIN_FILE, "val": VAL_FILE})
@@ -419,9 +421,12 @@ if __name__ == "__main__":
         args=training_args,
         train_dataset=dataset["train"],
         eval_dataset=dataset["val"],
+        tokenizer=tokenizer
     )
     trainer.train()
 
     # Save the trained model
     model.save_pretrained("a1_rnn_model_trained")
     print("Trained model saved successfully.")
+
+# %%
