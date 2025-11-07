@@ -6,5 +6,5 @@
   "embedding_size": 128,
   "hidden_size": 256,
   "transformers_version": "4.57.1",
-  "vocab_size": 6795
+  "vocab_size": 25473
 }
