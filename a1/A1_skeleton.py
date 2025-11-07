@@ -346,6 +346,7 @@ class A1Trainer:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+            training_loss = loss.item()
 
             # Evaluation using perplexity
             if args.eval_strategy == "epoch":
@@ -379,12 +380,41 @@ class A1Trainer:
                 perplexity = np.exp(avg_loss)
 
                 print(
-                    f"Epoch {epoch} Loss: {loss.item()} Val Loss: {avg_loss} Perplexity: {perplexity}"
+                    f"Epoch {epoch} Training Loss: {training_loss} Val Loss: {avg_loss} Perplexity: {perplexity}"
                 )
 
         print(f"Saving to {args.output_dir}.")
         self.model.save_pretrained(args.output_dir)
 
+### 
+### Part 5. Evaluation
+### 
+
+# Predict next word 
+
+def predict_next_word(model, tokenizer, text, top_k=5):
+    model.eval()
+    # Tokenize input text
+    inputs = tokenizer([text], return_tensors='pt', padding=True)
+    input_ids = inputs['input_ids']
+
+    # Get model outputs
+    with torch.no_grad():
+        outputs = model(input_ids)
+
+    # Get the logits for the last token
+    logits = outputs[:, -1, :]
+    
+    # Get the top k probabilities and their corresponding token IDs
+    top_k_probs, top_k_indices = torch.topk(logits, top_k, dim=-1)
+
+    # Convert token IDs to words using inv_vocabulary
+    top_k_words = [tokenizer.inv_vocabulary[idx.item()] for idx in top_k_indices[0]]
+
+    # print the top k words with their probabilities
+    print(f"Next word predictions for {text}:")
+    for word, prob in zip(top_k_words, top_k_probs[0]):
+        print(f"{word}: {prob.item()}")
 
 if __name__ == "__main__":
     tokenizer = A1Tokenizer.from_file("tokenizer.pkl")
@@ -439,5 +469,14 @@ if __name__ == "__main__":
     model.save_pretrained("a1_rnn_model_trained")
     print("Trained model saved successfully.")
 
-# %%
-#print(tokenizer.model_max_length)
+    # %%
+    # Example predictions
+    test_sentences = [
+        "She lives in San",
+        "The quick brown fox",
+        "In a galaxy far",
+        "Once upon a time",
+    ]
+
+    for sentence in test_sentences:
+        predict_next_word(model, tokenizer, sentence, top_k=5)
