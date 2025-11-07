@@ -150,10 +150,10 @@ class A1Tokenizer:
             padded_attention_mask.append(attention + [0] * pad_len)
 
         if return_tensors:
-            return {
+            return BatchEncoding({
                 "attention_mask": torch.tensor(padded_attention_mask, dtype=torch.long),
                 "input_ids": torch.tensor(padded_ids, dtype=torch.long)
-            }
+            })
         
         return BatchEncoding({'attention_mask': padded_attention_mask,'input_ids': padded_ids})
 
