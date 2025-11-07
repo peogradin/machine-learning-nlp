@@ -172,7 +172,7 @@ class A1Tokenizer:
         with open(filename, 'rb') as f:
             return pickle.load(f)
    
-# tokenizer = build_tokenizer("val.txt", lowercase_tokenizer)
+# tokenizer = build_tokenizer("train.txt", lowercase_tokenizer)
 # test_texts = [['This is a test.', 'Another test.']]
 # tokenizer.save("tokenizer.pkl")
 # tokenizer2 = A1Tokenizer.from_file("tokenizer.pkl")
@@ -323,9 +323,9 @@ class A1Trainer:
                 input_ids = self.tokenizer(
                     batch["text"], truncation=False, padding=True, return_tensors="pt"
                 )["input_ids"]
-                print(isinstance(batch["text"][0], str))
-                print(batch["text"][0])
-                print(len(batch["text"][0]), len(batch["text"]))
+                # print(isinstance(batch["text"][0], str))
+                # print(batch["text"][0])
+                # print(len(batch["text"][0]), len(batch["text"]))
                 #       X = all columns in input_ids except the last one
                 #       Y = all columns in input_ids except the first one
                 #       put X and Y onto the GPU (or whatever device you use)
@@ -334,7 +334,7 @@ class A1Trainer:
                 #       apply the model to X
                 outputs = self.model(X)
                 #       compute the loss for the model output and Y
-                print(Y.shape, Y)
+                # print(Y.shape, Y)
                 targets = Y.reshape(-1)  # 2-dimensional -> 1-dimensional
                 logits = outputs.reshape(
                     -1, outputs.shape[-1]
@@ -345,40 +345,40 @@ class A1Trainer:
                 loss.backward()
                 optimizer.step()
 
-                # Evaluation using perplexity
-                if args.eval_strategy == "epoch":
-                    # compute mean cross entropy loss on validation set
-                    self.model.eval()
-                    total_loss = 0.0
-                    total_batches = 0
+            # Evaluation using perplexity
+            if args.eval_strategy == "epoch":
+                # compute mean cross entropy loss on validation set
+                self.model.eval()
+                total_loss = 0.0
+                total_batches = 0
 
-                    with torch.no_grad():
-                        for batch in val_loader:
-                            input_ids = self.tokenizer(
-                                batch["text"],
-                                truncation=False,
-                                padding=True,
-                                return_tensors="pt",
-                            )["input_ids"]
-                            X = input_ids[:, :-1].to(device)
-                            Y = input_ids[:, 1:].to(device)
+                with torch.no_grad():
+                    for batch in val_loader:
+                        input_ids = self.tokenizer(
+                            batch["text"],
+                            truncation=False,
+                            padding=True,
+                            return_tensors="pt",
+                        )["input_ids"]
+                        X = input_ids[:, :-1].to(device)
+                        Y = input_ids[:, 1:].to(device)
 
-                            outputs = self.model(X)
+                        outputs = self.model(X)
 
-                            targets = Y.reshape(-1)  # 2-dimensional -> 1-dimensional
-                            logits = outputs.reshape(
-                                -1, outputs.shape[-1]
-                            )  # 3-dimensional -> 2-dimensional
-                            loss = loss_func(logits, targets)
-                            total_loss += loss.item()
-                            total_batches += 1
+                        targets = Y.reshape(-1)  # 2-dimensional -> 1-dimensional
+                        logits = outputs.reshape(
+                            -1, outputs.shape[-1]
+                        )  # 3-dimensional -> 2-dimensional
+                        loss = loss_func(logits, targets)
+                        total_loss += loss.item()
+                        total_batches += 1
 
-                    avg_loss = total_loss / total_batches if total_batches > 0 else 0
-                    perplexity = np.exp(avg_loss)
+                avg_loss = total_loss / total_batches if total_batches > 0 else 0
+                perplexity = np.exp(avg_loss)
 
-                    print(
-                        f"Epoch {epoch} Loss: {loss.item()} Val Loss: {avg_loss} Perplexity: {perplexity}"
-                    )
+                print(
+                    f"Epoch {epoch} Loss: {loss.item()} Val Loss: {avg_loss} Perplexity: {perplexity}"
+                )
 
         print(f"Saving to {args.output_dir}.")
         self.model.save_pretrained(args.output_dir)
@@ -404,8 +404,8 @@ if __name__ == "__main__":
     # TODO: remove for full data
     from torch.utils.data import Subset
 
-    for sec in ["train", "val"]:
-        dataset[sec] = Subset(dataset[sec], range(1000))
+    # for sec in ["train", "val"]:
+    #     dataset[sec] = Subset(dataset[sec], range(1000))
 
     print("Datasets loaded successfully.")
 
