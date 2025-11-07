@@ -317,6 +317,7 @@ class A1Trainer:
         )
 
         for epoch in range(args.num_train_epochs):
+            self.model.train()
             for batch in train_loader:
                 #       PREPROCESSING AND FORWARD PASS:
                 #       input_ids = apply your tokenizer to B
