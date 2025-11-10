@@ -30,7 +30,7 @@ def build_tokenizer(train_file, tokenize_fun=lowercase_tokenizer, max_voc_size=N
              eos_token:         The dummy string corresponding to the end the text.
     """
 
-    # TODO: build the vocabulary, possibly truncating it to max_voc_size if that is specified.
+    # build the vocabulary, possibly truncating it to max_voc_size if that is specified.
     # Then return a tokenizer object (implemented below).
     vocabulary = {
         pad_token: 0,
@@ -77,7 +77,6 @@ class A1Tokenizer:
     """A minimal implementation of a tokenizer similar to tokenizers in the HuggingFace library."""
 
     def __init__(self, pad_token, unk_token, bos_token, eos_token, tokenize_fun, model_max_length, vocabulary, inv_vocabulary):
-        # TODO: store all values you need in order to implement __call__ below.
         self.pad_token_id = vocabulary[pad_token]     # Compulsory attribute.
         self.unk_token_id = vocabulary[unk_token]
         self.bos_token_id = vocabulary[bos_token]
@@ -102,7 +101,7 @@ class A1Tokenizer:
         if return_tensors and return_tensors != 'pt':
             raise ValueError('Should be pt')
         
-        # TODO: Your work here is to split the texts into words and map them to integer values.
+        # split the texts into words and map them to integer values.
         # 
         # - If `truncation` is set to True, the length of the encoded sequences should be 
         #   at most self.model_max_length.
@@ -112,7 +111,7 @@ class A1Tokenizer:
         # - If `return_tensors` is undefined, then the returned `input_ids` should be a list of lists.
         #   Otherwise, if `return_tensors` is 'pt', then `input_ids` should be a PyTorch 2D tensor.
 
-        # TODO: Return a BatchEncoding where input_ids stores the result of the integer encoding.
+        # Return a BatchEncoding where input_ids stores the result of the integer encoding.
         # Optionally, if you want to be 100% HuggingFace-compatible, you should also include an 
         # attention mask of the same shape as input_ids. In this mask, padding tokens correspond
         # to the the value 0 and real tokens to the value 1.
@@ -299,7 +298,7 @@ class A1Trainer:
 
         loss_func = torch.nn.CrossEntropyLoss(ignore_index=self.tokenizer.pad_token_id)
 
-        # TODO: Relevant arguments: at least args.learning_rate, but you can optionally also consider
+        # Relevant arguments: at least args.learning_rate, but you can optionally also consider
         # other Adam-related hyperparameters here.
         optimizer = torch.optim.AdamW(
             lr=args.learning_rate,
@@ -307,7 +306,7 @@ class A1Trainer:
             params=self.model.parameters(),
         )
 
-        # TODO: Relevant arguments: args.per_device_train_batch_size, args.per_device_eval_batch_size
+        # Relevant arguments: args.per_device_train_batch_size, args.per_device_eval_batch_size
         train_loader = DataLoader(
             self.train_dataset,
             batch_size=args.per_device_train_batch_size,
@@ -325,9 +324,6 @@ class A1Trainer:
                 input_ids = self.tokenizer(
                     batch["text"], truncation=False, padding=True, return_tensors="pt"
                 )["input_ids"]
-                # print(isinstance(batch["text"][0], str))
-                # print(batch["text"][0])
-                # print(len(batch["text"][0]), len(batch["text"]))
                 #       X = all columns in input_ids except the last one
                 #       Y = all columns in input_ids except the first one
                 #       put X and Y onto the GPU (or whatever device you use)
@@ -336,7 +332,6 @@ class A1Trainer:
                 #       apply the model to X
                 outputs = self.model(X)
                 #       compute the loss for the model output and Y
-                # print(Y.shape, Y)
                 targets = Y.reshape(-1)  # 2-dimensional -> 1-dimensional
                 logits = outputs.reshape(
                     -1, outputs.shape[-1]
@@ -392,11 +387,11 @@ class A1Trainer:
 
 # Predict next word 
 
-def predict_next_word(model, tokenizer, text, top_k=5):
+def predict_next_word(model, tokenizer, text, device, top_k=5):
     model.eval()
     # Tokenize input text
     inputs = tokenizer([text], return_tensors='pt', padding=True)
-    input_ids = inputs['input_ids']
+    input_ids = inputs['input_ids'][:, :-1].to(device) # Exclude the EOS token  
 
     # Get model outputs
     with torch.no_grad():
@@ -433,8 +428,8 @@ if __name__ == "__main__":
     dataset = load_dataset("text", data_files={"train": TRAIN_FILE, "val": VAL_FILE})
     dataset = dataset.filter(lambda x: x["text"].strip() != "")
 
-    # TODO: remove for full data
-    from torch.utils.data import Subset
+    # remove for full data
+    # from torch.utils.data import Subset
 
     # for sec in ["train", "val"]:
     #     dataset[sec] = Subset(dataset[sec], range(1000))
@@ -444,8 +439,8 @@ if __name__ == "__main__":
     from transformers import TrainingArguments
 
     training_args = TrainingArguments(
-        output_dir="./a1_rnn_model",
-        num_train_epochs=5,
+        output_dir="./a1_rnn_model_6ep",
+        num_train_epochs=6,
         per_device_train_batch_size=32,
         per_device_eval_batch_size=32,
         optim="adamw_torch",
@@ -464,11 +459,8 @@ if __name__ == "__main__":
         tokenizer=tokenizer
     )
     trainer.train()
-
-    # Save the trained model
-    model.save_pretrained("a1_rnn_model_trained")
     print("Trained model saved successfully.")
-
+    
     # %%
     # Example predictions
     test_sentences = [
@@ -478,5 +470,6 @@ if __name__ == "__main__":
         "Once upon a time",
     ]
 
+    device = trainer.select_device()
     for sentence in test_sentences:
-        predict_next_word(model, tokenizer, sentence, top_k=5)
+        predict_next_word(model, tokenizer, sentence, device, top_k=5)
