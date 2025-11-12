@@ -28,9 +28,16 @@ class A2MLP(nn.Module):
         super().__init__()
         assert(config.hidden_act == 'silu')
         # TODO: initalize components here
+        self.config = config
+        self.hidden_size = config.hidden_size
+        self.intermediate_size = config.intermediate_size
+        self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
+        self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
+        self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
+        self.hidden_act = nn.functional.silu()
 
     def forward(self, hidden_states):
-        ...
+        return self.down_proj(self.hidden_act(self.gate_proj(hidden_states)) * self.up_proj(hidden_states))
 
 # This is optional, since you can use PyTorch's RMSNorm.
 class A2RMSNorm(nn.Module):
