@@ -188,7 +188,6 @@ class A2Transformer(PreTrainedModel):
         # Call embedding, transformer decoder layers, last normalizer, and unembedding.
         hidden_states = self.embedding(input_ids)
         for layer in self.layers:
-            print(hidden_states, rope_rotations)
             hidden_states = layer(hidden_states, rope_rotations)
         hidden_states = self.norm(hidden_states)
         logits = self.unembedding(hidden_states)
@@ -243,17 +242,21 @@ class A2RotaryEmbedding(nn.Module):
 
 def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50, topk: int = 5, temperature: float = 1.0):
     model.eval()
-    input_ids = tokenizer(prompt, return_tensors="pt").to(model.device)
+    inputs = tokenizer([prompt], padding = True, return_tensors="pt").to(model.device)
+    input_ids = inputs["input_ids"][:, :-1]
     generated = input_ids
+    print(generated)
     with torch.no_grad():
         for _ in range(max_length):
             logits = model(generated)[:, -1, :]
+            print(logits.shape)
             if topk is not None:
                # take the top-k tokens only
                logits, _ = torch.topk(logits, topk, dim=-1)
              
             distr = Categorical(logits=logits / temperature)
             next_token = distr.sample().unsqueeze(0)
+            print(generated, next_token)
             generated = torch.cat((generated, next_token), dim=-1)
             if next_token == tokenizer.eos_token_id:
                 break
@@ -261,8 +264,15 @@ def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50,
     text = [tokenizer.inv_vocabulary[id] for id in generated[0].cpu().numpy()]
     return text
 # %%
+import sys
+sys.path.append("..")
+from a1.A1_skeleton import A1Tokenizer
+import a1.A1_skeleton as a1mod
+
+tokenizer = A1Tokenizer.from_file("../a1/tokenizer.pkl")
+
 config = A2ModelConfig(
-    vocab_size=1000,
+    vocab_size=len(tokenizer),
     hidden_size=100,
     intermediate_size=200,
     num_attention_heads=10,
@@ -272,6 +282,13 @@ config = A2ModelConfig(
 model = A2Transformer(config)
 X = torch.tensor([[1, 2, 3]], dtype=torch.long)
 #print(X, X.shape)
+sys.modules['__main__'].A1Tokenizer = a1mod.A1Tokenizer
+sys.modules['__main__'].lowercase_tokenizer = a1mod.lowercase_tokenizer
+
 
 out = model(X)
-print(out.shape, out)
+prompt = "He"
+generated_out = generate(model, prompt, tokenizer)
+#print(out.shape, out)
+print(generated_out)
+# %%
