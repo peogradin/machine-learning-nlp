@@ -1,6 +1,6 @@
 # %%
 import torch
-from torch import nn, RMSNorm
+from torch import nn
 from transformers import PreTrainedModel, PretrainedConfig
 from torch.distributions.categorical import Categorical
 
@@ -96,9 +96,54 @@ class A2Attention(nn.Module):
         super().__init__()
         # TODO: set up W_q, W_k, W_v, W_o here
         # TODO: set up normalizers here
+        self.config = config
+        self.hidden_size = config.hidden_size
+        self.n_h = config.num_attention_heads
+        assert(self.hidden_size % self.n_h == 0)
+        self.d_h = self.hidden_size // self.n_h
+        self.W_Q = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
+        self.W_K = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
+        self.W_V = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
+        self.W_O = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
+        self.norm = nn.RMSNorm(self.hidden_size, eps=self.config.rms_norm_eps)
 
     def forward(self, hidden_states, rope_rotations):
-        ...
+        b, m, d  = hidden_states.shape
+    
+        q = self.norm(self.W_Q(hidden_states))
+        k = self.norm(self.W_K(hidden_states))
+        v = self.W_V(hidden_states)
+
+        q = q.reshape([b, m, self.n_h, self.d_h]).transpose(1, 2)
+        k = k.reshape([b, m, self.n_h, self.d_h]).transpose(1, 2)
+        v = v.reshape([b, m, self.n_h, self.d_h]).transpose(1, 2)
+
+        q, k = apply_rotary_pos_emb(q, k, rope_rotations)
+
+        attn_out = nn.functional.scaled_dot_product_attention(q, k, v, is_causal=True)
+        attn_out = attn_out.transpose(1, 2).reshape(b, m, d)
+        out = self.W_O(attn_out)
+
+        return out
+
+# %% Sanity check
+config = A2ModelConfig(
+    vocab_size=1000,
+    hidden_size=100,
+    intermediate_size=200,
+    num_attention_heads=4,
+    rope_theta=1e4
+)
+
+x = torch.randn(2, 10, 100)
+ids = torch.randn(2, 10, 100)
+attention = A2Attention(config)
+rotary_embedding = A2RotaryEmbedding(config)
+rotary_embed = rotary_embedding(ids)
+xout = attention(x, rotary_embed)
+print(xout.shape, xout)
+
+# %%
 
 
 class A2DecoderLayer(nn.Module):
@@ -107,7 +152,7 @@ class A2DecoderLayer(nn.Module):
         super().__init__()
         self.attention = A2Attention(config)
         self.mlp = A2MLP(config)
-        self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
     def forward(self, hidden_states, rope_rotations):
         att = self.attention(hidden_states, rope_rotations)
@@ -130,7 +175,7 @@ class A2Transformer(PreTrainedModel):
         # transformer decoder layers in a ModuleList for proper gradients.
         self.modules = nn.ModuleList([A2DecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.embedding = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.unembedding = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         # This line should be called after you have set up all components.
@@ -142,8 +187,9 @@ class A2Transformer(PreTrainedModel):
 
         # Call embedding, transformer decoder layers, last normalizer, and unembedding.
         hidden_states = self.embedding(input_ids)
-        for layer in self.modules:
-            hidden_states = layer(hidden_states, rope_rotations)
+        for layer in self.modules():
+            print(hidden_states, rope_rotations)
+            hidden_states = layer(hidden_states)
         hidden_states = self.norm(hidden_states)
         logits = self.unembedding(hidden_states)
         return logits
@@ -214,3 +260,18 @@ def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50,
     # convert ids to text 
     text = [tokenizer.inv_vocabulary[id] for id in generated[0].cpu().numpy()]
     return text
+# %%
+config = A2ModelConfig(
+    vocab_size=1000,
+    hidden_size=100,
+    intermediate_size=200,
+    num_attention_heads=4,
+    num_hidden_layers=1,
+    rope_theta=1
+)
+model = A2Transformer(config)
+X = torch.tensor([[1, 2, 3]], dtype=torch.long)
+#print(X, X.shape)
+
+out = model(X)
+print(out.shape, out)
