@@ -173,7 +173,7 @@ class A2Transformer(PreTrainedModel):
 
         self.rotary_emb = A2RotaryEmbedding(config)
         # transformer decoder layers in a ModuleList for proper gradients.
-        self.modules = nn.ModuleList([A2DecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.layers = nn.ModuleList([A2DecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.embedding = nn.Embedding(config.vocab_size, config.hidden_size)
         self.norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.unembedding = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
@@ -187,9 +187,9 @@ class A2Transformer(PreTrainedModel):
 
         # Call embedding, transformer decoder layers, last normalizer, and unembedding.
         hidden_states = self.embedding(input_ids)
-        for layer in self.modules():
+        for layer in self.layers:
             print(hidden_states, rope_rotations)
-            hidden_states = layer(hidden_states)
+            hidden_states = layer(hidden_states, rope_rotations)
         hidden_states = self.norm(hidden_states)
         logits = self.unembedding(hidden_states)
         return logits
@@ -265,7 +265,7 @@ config = A2ModelConfig(
     vocab_size=1000,
     hidden_size=100,
     intermediate_size=200,
-    num_attention_heads=4,
+    num_attention_heads=10,
     num_hidden_layers=1,
     rope_theta=1
 )
