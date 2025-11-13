@@ -1,4 +1,4 @@
-
+# %%
 import torch
 from torch import nn
 from transformers import PreTrainedModel, PretrainedConfig
@@ -34,10 +34,21 @@ class A2MLP(nn.Module):
         self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
-        self.hidden_act = nn.functional.silu()
+        self.hidden_act = nn.functional.silu
 
     def forward(self, hidden_states):
         return self.down_proj(self.hidden_act(self.gate_proj(hidden_states)) * self.up_proj(hidden_states))
+
+# %% Sanity check
+hidden_size = 10
+intermediate_size = 15
+config = A2ModelConfig(None, hidden_size=hidden_size, intermediate_size=intermediate_size)
+mlp = A2MLP(config)
+
+test_tensor = torch.ones(hidden_size)
+out = mlp(test_tensor)
+print(out.shape, out)
+# %%
 
 # This is optional, since you can use PyTorch's RMSNorm.
 class A2RMSNorm(nn.Module):
