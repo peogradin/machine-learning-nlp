@@ -240,34 +240,57 @@ class A2RotaryEmbedding(nn.Module):
             sin = emb.sin()
             return cos, sin
 
-def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50, topk: int = 5, temperature: float = 1.0):
+def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50, topk=None, temperature: float = 1.0):
     model.eval()
-    inputs = tokenizer([prompt], padding = True, return_tensors="pt").to(model.device)
-    input_ids = inputs["input_ids"][:, :-1]
+
+    if hasattr(tokenizer, "decode"):
+    # use OLMo
+        inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
+        input_ids = inputs["input_ids"]
+    else:
+        inputs = tokenizer([prompt], padding = True, return_tensors="pt").to(model.device)
+        input_ids = inputs["input_ids"][:, :-1]
     generated = input_ids
     print(generated)
+
     with torch.no_grad():
         for _ in range(max_length):
-            logits = model(generated)[:, -1, :]
-            print(logits.shape)
+            logits = model(generated)
+            if hasattr(logits, "logits"):
+                # Olmo model
+                logits = logits.logits
+            last_logits = logits[:, -1, :] 
+            print(last_logits.shape)
+
             if topk is not None:
                # take the top-k tokens only
-               logits, _ = torch.topk(logits, topk, dim=-1)
-             
-            distr = Categorical(logits=logits / temperature)
-            next_token = distr.sample().unsqueeze(0)
+               top_logits, top_idx = torch.topk(last_logits, topk, dim=-1)
+               distr = Categorical(logits=top_logits / temperature)
+               next_token = top_idx.gather(-1, distr.sample().unsqueeze(-1))
+            else:
+                next_token = last_logits.argmax(dim=-1, keepdim=True)
+                # distr = Categorical(logits=last_logits / temperature)
+                # next_token = distr.sample().unsqueeze(-1)
             print(generated, next_token)
+
             generated = torch.cat((generated, next_token), dim=-1)
+            
             if next_token == tokenizer.eos_token_id:
                 break
     # convert ids to text 
-    text = [tokenizer.inv_vocabulary[id] for id in generated[0].cpu().numpy()]
-    return text
+    if hasattr(tokenizer, "decode"):
+        # Olmo
+        return tokenizer.decode(generated[0])
+    else:
+        return [tokenizer.inv_vocabulary[id] for id in generated[0].cpu().numpy()]
 # %%
 import sys
 sys.path.append("..")
 from a1.A1_skeleton import A1Tokenizer
 import a1.A1_skeleton as a1mod
+
+sys.modules['__main__'].A1Tokenizer = a1mod.A1Tokenizer
+sys.modules['__main__'].lowercase_tokenizer = a1mod.lowercase_tokenizer
 
 tokenizer = A1Tokenizer.from_file("../a1/tokenizer.pkl")
 
@@ -282,9 +305,6 @@ config = A2ModelConfig(
 model = A2Transformer(config)
 X = torch.tensor([[1, 2, 3]], dtype=torch.long)
 #print(X, X.shape)
-sys.modules['__main__'].A1Tokenizer = a1mod.A1Tokenizer
-sys.modules['__main__'].lowercase_tokenizer = a1mod.lowercase_tokenizer
-
 
 out = model(X)
 prompt = "He"
@@ -292,3 +312,22 @@ generated_out = generate(model, prompt, tokenizer)
 #print(out.shape, out)
 print(generated_out)
 # %%
+
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+local_dir = '/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B'
+tokenizer_olmo = AutoTokenizer.from_pretrained(local_dir, local_files_only=True)
+model_olmo = AutoModelForCausalLM.from_pretrained(local_dir, local_files_only=True)
+
+prompts = [
+    'In natural language processing, a Transformer',
+    'Is Stockholm the capital of Sweden? Answer yes or no. The answer is',
+    'Write a Python program that reverses a list.'
+]
+
+prompt = prompts[1]
+tokenized = tokenizer_olmo(prompt, return_tensors='pt')
+print(f"Prompt: {prompt}, Tokenized: {tokenized}")
+
+generated = generate(model_olmo, prompt, tokenizer_olmo)
+print(generated)
