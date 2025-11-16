@@ -278,13 +278,13 @@ class A1RNNModel(PreTrainedModel):
         return out
 
 
-config = A1RNNModelConfig(vocab_size=1000, embedding_size=128, hidden_size=256)
-model = A1RNNModel(config)
+# config = A1RNNModelConfig(vocab_size=1000, embedding_size=128, hidden_size=256)
+# model = A1RNNModel(config)
 
-# Test case
-X = torch.tensor([[1, 33, 54, 99]])
-out = model(X)
-print(out.shape)
+# # Test case
+# X = torch.tensor([[1, 33, 54, 99]])
+# out = model(X)
+# print(out.shape)
 # %%
 
 ###
@@ -532,10 +532,10 @@ if __name__ == "__main__":
         predict_next_word(model, tokenizer, sentence, device, top_k=5)
 
 # %%
-def count_params(module):
-    return sum(p.numel() for p in module.parameters())
+# def count_params(module):
+#     return sum(p.numel() for p in module.parameters())
 
-print("Embedding params:", count_params(model.embedding))
-print("LSTM params:", count_params(model.rnn))
-print("Unembedding params:", count_params(model.unembedding))
-print("Total params:", sum(p.numel() for p in model.parameters()))
+# print("Embedding params:", count_params(model.embedding))
+# print("LSTM params:", count_params(model.rnn))
+# print("Unembedding params:", count_params(model.unembedding))
+# print("Total params:", sum(p.numel() for p in model.parameters()))

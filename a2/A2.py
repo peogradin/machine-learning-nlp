@@ -50,14 +50,14 @@ class A2MLP(nn.Module):
         return self.down_proj(self.hidden_act(self.gate_proj(hidden_states)) * self.up_proj(hidden_states))
 
 # %% Sanity check
-hidden_size = 10
-intermediate_size = 15
-config = A2ModelConfig(None, hidden_size=hidden_size, intermediate_size=intermediate_size)
-mlp = A2MLP(config)
+# hidden_size = 10
+# intermediate_size = 15
+# config = A2ModelConfig(None, hidden_size=hidden_size, intermediate_size=intermediate_size)
+# mlp = A2MLP(config)
 
-test_tensor = torch.ones(hidden_size)
-out = mlp(test_tensor)
-print(out.shape, out)
+# test_tensor = torch.ones(hidden_size)
+# out = mlp(test_tensor)
+# print(out.shape, out)
 # %%
 
 class A2MLP2(nn.Module):
@@ -85,9 +85,9 @@ mlp = A2MLP(A2ModelConfig(
     intermediate_size=200,
 ))
 # some 3-dimensional tensor where the last dimension has the same size as hidden_size
-x = torch.randn(2, 10, 100)
-output = mlp(x)
-print(output.shape)  # should be the same shape (2, 10, 100)
+# x = torch.randn(2, 10, 100)
+# output = mlp(x)
+# print(output.shape)  # should be the same shape (2, 10, 100)
 
 # This is optional, since you can use PyTorch's RMSNorm.
 class A2RMSNorm(nn.Module):
@@ -343,15 +343,19 @@ def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50,
 
 # generated = generate(model_olmo, prompt, tokenizer_olmo)
 # print(generated)
+# %%
 
 # %%
 if __name__ == "__main__":
-    
+    print("torch.cuda.is_available():", torch.cuda.is_available(), flush=True)
+    print("torch.version.cuda:", torch.version.cuda, flush=True)
+    print("CUDA device count:", torch.cuda.device_count(), flush=True)
+    print("CUDA_VISIBLE_DEVICES:", os.environ.get("CUDA_VISIBLE_DEVICES"), flush=True)
     a2_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(a2_dir)
     a1_dir = os.path.join(project_root, "a1")
     
-    tokenizer_path = os.path.join(a1_dir, "tokenizer.pkl")
+    tokenizer_path = os.path.join(a2_dir, "a2_tokenizer.pkl")
     tokenizer = A1Tokenizer.from_file(tokenizer_path)
     print("Tokenizer loaded successfully")
     print("Vocabulary size: ", len(tokenizer))
@@ -385,7 +389,7 @@ if __name__ == "__main__":
 
     training_args = TrainingArguments(
         output_dir=os.path.join(a2_dir, "a2_model"),
-        num_train_epochs=3,
+        num_train_epochs=10,
         per_device_train_batch_size=32,
         per_device_eval_batch_size=32,
         optim="adamw_torch",
