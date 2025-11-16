@@ -1,8 +1,20 @@
 # %%
+import os
+import sys
 import torch
 from torch import nn
-from transformers import PreTrainedModel, PretrainedConfig
-from torch.distributions.categorical import Categorical
+from transformers import PreTrainedModel, PretrainedConfig, TrainingArguments, AutoTokenizer, AutoModelForCausalLM
+from torch.distributions import Categorical
+from datasets import load_dataset
+
+try:
+    from a1.A1_skeleton import A1Tokenizer, A1Trainer, lowercase_tokenizer
+except ModuleNotFoundError:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)
+    if project_root not in sys.path:
+        sys.path.append(project_root)
+    from a1.A1_skeleton import A1Tokenizer, A1Trainer, lowercase_tokenizer
 
 class A2ModelConfig(PretrainedConfig):
     """Configuration object that stores hyperparameters that define the Transformer language model."""
@@ -127,21 +139,21 @@ class A2Attention(nn.Module):
         return out
 
 # %% Sanity check
-config = A2ModelConfig(
-    vocab_size=1000,
-    hidden_size=100,
-    intermediate_size=200,
-    num_attention_heads=4,
-    rope_theta=1e4
-)
+# config = A2ModelConfig(
+#     vocab_size=1000,
+#     hidden_size=100,
+#     intermediate_size=200,
+#     num_attention_heads=4,
+#     rope_theta=1e4
+# )
 
-x = torch.randn(2, 10, 100)
-ids = torch.randn(2, 10, 100)
-attention = A2Attention(config)
-rotary_embedding = A2RotaryEmbedding(config)
-rotary_embed = rotary_embedding(ids)
-xout = attention(x, rotary_embed)
-print(xout.shape, xout)
+# x = torch.randn(2, 10, 100)
+# ids = torch.randn(2, 10, 100)
+# attention = A2Attention(config)
+# rotary_embedding = A2RotaryEmbedding(config)
+# rotary_embed = rotary_embedding(ids)
+# xout = attention(x, rotary_embed)
+# print(xout.shape, xout)
 
 # %%
 
@@ -152,15 +164,19 @@ class A2DecoderLayer(nn.Module):
         super().__init__()
         self.attention = A2Attention(config)
         self.mlp = A2MLP(config)
-        self.norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-
+        self.post_attention_norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.post_swiglu_norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
     def forward(self, hidden_states, rope_rotations):
-        att = self.attention(hidden_states, rope_rotations)
+        ## TODO: Maybe it should be two different RMSNorm layers?
+        residual = hidden_states
+        hidden_states = self.attention(hidden_states, rope_rotations)
         # Normalization and residual connection from input
-        att = self.norm(att) + hidden_states
-        mlp = self.mlp(att)
+        hidden_states = self.post_attention_norm(hidden_states) + residual
+        residual = hidden_states
+        hidden_states = self.mlp(hidden_states)
         # Residual connection from attention output
-        return  self.norm(mlp) + att
+        hidden_states = self.post_swiglu_norm(hidden_states) + residual
+        return  hidden_states
 
 
 class A2Transformer(PreTrainedModel):
@@ -241,26 +257,29 @@ class A2RotaryEmbedding(nn.Module):
             return cos, sin
 
 def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50, topk=None, temperature: float = 1.0):
-    model.eval()
 
+    model.eval()
     if hasattr(tokenizer, "decode"):
     # use OLMo
-        inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
+        inputs = tokenizer([prompt], return_tensors='pt').to(model.device)
         input_ids = inputs["input_ids"]
     else:
         inputs = tokenizer([prompt], padding = True, return_tensors="pt").to(model.device)
         input_ids = inputs["input_ids"][:, :-1]
     generated = input_ids
-    print(generated)
+    prompt_len = generated.shape[1]
+    #print(generated)
 
     with torch.no_grad():
         for _ in range(max_length):
-            logits = model(generated)
-            if hasattr(logits, "logits"):
+            outputs = model(generated)
+            if hasattr(outputs, "logits"):
                 # Olmo model
-                logits = logits.logits
+                logits = outputs.logits
+            else:
+                logits = outputs
             last_logits = logits[:, -1, :] 
-            print(last_logits.shape)
+            # print(last_logits.shape)
 
             if topk is not None:
                # take the top-k tokens only
@@ -271,63 +290,149 @@ def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50,
                 next_token = last_logits.argmax(dim=-1, keepdim=True)
                 # distr = Categorical(logits=last_logits / temperature)
                 # next_token = distr.sample().unsqueeze(-1)
-            print(generated, next_token)
+            # print(generated, next_token)
 
             generated = torch.cat((generated, next_token), dim=-1)
             
-            if next_token == tokenizer.eos_token_id:
+            if (next_token == tokenizer.eos_token_id).all():
                 break
     # convert ids to text 
     if hasattr(tokenizer, "decode"):
         # Olmo
-        return tokenizer.decode(generated[0])
+        return tokenizer.decode(generated[0, prompt_len:])
     else:
-        return [tokenizer.inv_vocabulary[id] for id in generated[0].cpu().numpy()]
+        return [tokenizer.inv_vocabulary[id] for id in generated[0, prompt_len:].cpu().numpy()]
+# %% Sanity check of model / generate functionality
+
+# tokenizer = A1Tokenizer.from_file("../a1/tokenizer.pkl")
+
+# config = A2ModelConfig(
+#     vocab_size=len(tokenizer),
+#     hidden_size=100,
+#     intermediate_size=200,
+#     num_attention_heads=10,
+#     num_hidden_layers=1,
+#     rope_theta=1
+# )
+# model = A2Transformer(config)
+# X = torch.tensor([[1, 2, 3]], dtype=torch.long)
+# #print(X, X.shape)
+
+# out = model(X)
+# prompt = "He is a "
+# generated_out = generate(model, prompt, tokenizer)
+# #print(out.shape, out)
+# print(generated_out)
+# %% Testing pretrained OLMO
+
+# from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# local_dir = '/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B'
+# tokenizer_olmo = AutoTokenizer.from_pretrained(local_dir, local_files_only=True)
+# model_olmo = AutoModelForCausalLM.from_pretrained(local_dir, local_files_only=True)
+
+# prompts = [
+#     'In natural language processing, a Transformer',
+#     'Is Stockholm the capital of Sweden? Answer yes or no. The answer is',
+#     'Write a Python program that reverses a list.'
+# ]
+
+# prompt = prompts[1]
+# tokenized = tokenizer_olmo(prompt, return_tensors='pt')
+# print(f"Prompt: {prompt}, Tokenized: {tokenized}")
+
+# generated = generate(model_olmo, prompt, tokenizer_olmo)
+# print(generated)
+
 # %%
-import sys
-sys.path.append("..")
-from a1.A1_skeleton import A1Tokenizer
-import a1.A1_skeleton as a1mod
+if __name__ == "__main__":
+    
+    a2_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(a2_dir)
+    a1_dir = os.path.join(project_root, "a1")
+    
+    tokenizer_path = os.path.join(a1_dir, "tokenizer.pkl")
+    tokenizer = A1Tokenizer.from_file(tokenizer_path)
+    print("Tokenizer loaded successfully")
+    print("Vocabulary size: ", len(tokenizer))
 
-sys.modules['__main__'].A1Tokenizer = a1mod.A1Tokenizer
-sys.modules['__main__'].lowercase_tokenizer = a1mod.lowercase_tokenizer
+    train_file = os.path.join(a1_dir, "train.txt")
+    val_file = os.path.join(a1_dir, "val.txt")
 
-tokenizer = A1Tokenizer.from_file("../a1/tokenizer.pkl")
+    dataset = load_dataset("text", data_files={"train": train_file, "val": val_file})
+    dataset = dataset.filter(lambda x: x["text"].strip() != "")
+    # remove for full data
+    # from torch.utils.data import Subset
 
-config = A2ModelConfig(
-    vocab_size=len(tokenizer),
-    hidden_size=100,
-    intermediate_size=200,
-    num_attention_heads=10,
-    num_hidden_layers=1,
-    rope_theta=1
-)
-model = A2Transformer(config)
-X = torch.tensor([[1, 2, 3]], dtype=torch.long)
-#print(X, X.shape)
+    # for sec in ["train", "val"]:
+    #     dataset[sec] = Subset(dataset[sec], range(10))
+    print("Dataset loaded successfully")
 
-out = model(X)
-prompt = "He"
-generated_out = generate(model, prompt, tokenizer)
-#print(out.shape, out)
-print(generated_out)
+    config = A2ModelConfig(
+        vocab_size=len(tokenizer),
+        hidden_size=256,
+        intermediate_size=4*256,
+        num_attention_heads=8,
+        num_hidden_layers=2,
+        rope_theta=1e4,
+        rms_norm_eps=1e-5,
+        hidden_act="silu",
+        max_position_embeddings=tokenizer.model_max_length
+    )
+
+    model = A2Transformer(config)
+    print("A2Transformer model initialized successfully")
+
+    training_args = TrainingArguments(
+        output_dir=os.path.join(a2_dir, "a2_model"),
+        num_train_epochs=3,
+        per_device_train_batch_size=32,
+        per_device_eval_batch_size=32,
+        optim="adamw_torch",
+        learning_rate=5e-4,
+        weight_decay=0.01,
+        eval_strategy="epoch",
+        logging_dir=os.path.join(a2_dir, "logs"),
+        use_cpu=False
+    )
+
+    trainer = A1Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=dataset["train"],
+        eval_dataset=dataset["val"],
+        tokenizer=tokenizer
+    )
+    trainer.train()
+    print("Transformer model trained and saved successfully")
+
+    device = trainer.select_device()
+    model.to(device)
+
+    prompts = [
+        "In natural language processing, a Transformer",
+        "Is Stockholm the capital of Sweden? Answer yes or no. The answer is",
+        "Write a Python program that reverses a list.",
+    ]
+
+    print("\n=== Generation with A2Transformer model ===\n")
+    for prompt in prompts:
+        gen = generate(model, prompt, tokenizer, max_length=50, topk=10, temperature=0.9)
+        if isinstance(gen, list):
+            gen_text = " ".join(gen)
+        else:
+            gen_text = gen
+        print(f"\nPrompt: {prompt}\nGen: {gen_text}")
+
+    olmo_dir = '/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B'
+    if os.path.isdir(olmo_dir):
+        from transformers import AutoTokenizer, AutoModelForCausalLM
+        tokenizer_olmo = AutoTokenizer.from_pretrained(olmo_dir, local_files_only=True)
+        model_olmo = AutoModelForCausalLM.from_pretrained(olmo_dir, local_files_only=True)
+        model_olmo.to(device)
+        print("\n=== Generation with pretrained OLMo-2 model ===\n")
+        for prompt in prompts:
+            gen_olmo = generate(model_olmo, prompt, tokenizer_olmo, max_length=50, topk=10, temperature=0.9)
+            print(f"\nPrompt: {prompt}\nGen: {gen_olmo}")
+
 # %%
-
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-local_dir = '/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B'
-tokenizer_olmo = AutoTokenizer.from_pretrained(local_dir, local_files_only=True)
-model_olmo = AutoModelForCausalLM.from_pretrained(local_dir, local_files_only=True)
-
-prompts = [
-    'In natural language processing, a Transformer',
-    'Is Stockholm the capital of Sweden? Answer yes or no. The answer is',
-    'Write a Python program that reverses a list.'
-]
-
-prompt = prompts[1]
-tokenized = tokenizer_olmo(prompt, return_tensors='pt')
-print(f"Prompt: {prompt}, Tokenized: {tokenized}")
-
-generated = generate(model_olmo, prompt, tokenizer_olmo)
-print(generated)

@@ -530,3 +530,12 @@ if __name__ == "__main__":
     device = trainer.select_device()
     for sentence in test_sentences:
         predict_next_word(model, tokenizer, sentence, device, top_k=5)
+
+# %%
+def count_params(module):
+    return sum(p.numel() for p in module.parameters())
+
+print("Embedding params:", count_params(model.embedding))
+print("LSTM params:", count_params(model.rnn))
+print("Unembedding params:", count_params(model.unembedding))
+print("Total params:", sum(p.numel() for p in model.parameters()))
