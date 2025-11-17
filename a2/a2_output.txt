@@ -1,0 +1,57 @@
+###
+### Group 5: Jan Marten Winkler, Per-Ola Gradin, Pontus Granli Holmberg
+###
+
+[nltk_data] Downloading package punkt_tab to
+[nltk_data]     /data/users/janmarte/nltk_data...
+[nltk_data]   Package punkt_tab is already up-to-date!
+torch.cuda.is_available(): True
+torch.version.cuda: 12.8
+CUDA device count: 1
+CUDA_VISIBLE_DEVICES: 1
+Tokenizer loaded successfully
+Vocabulary size:  38780
+Dataset loaded successfully
+A2Transformer model initialized successfully
+Device: cuda
+Epoch 0 Training Loss: 4.703057289123535 Val Loss: 4.671198272107965 Perplexity: 106.82567199309526
+Epoch 1 Training Loss: 4.454794883728027 Val Loss: 4.4842624915947 Perplexity: 88.61157492697566
+Epoch 2 Training Loss: 4.369012355804443 Val Loss: 4.422589822830583 Perplexity: 83.31176892699365
+Epoch 3 Training Loss: 4.068979740142822 Val Loss: 4.40657266649236 Perplexity: 81.98798125758452
+Epoch 4 Training Loss: 3.821413278579712 Val Loss: 4.4136260464281 Perplexity: 82.56831790099179
+Epoch 5 Training Loss: 3.7692205905914307 Val Loss: 4.4433367363242215 Perplexity: 85.05828576045634
+Epoch 6 Training Loss: 3.769791603088379 Val Loss: 4.476999314825096 Perplexity: 87.97030504182719
+Epoch 7 Training Loss: 3.4946885108947754 Val Loss: 4.528442929597149 Perplexity: 92.61424185879342
+Epoch 8 Training Loss: 3.4747557640075684 Val Loss: 4.570119259395838 Perplexity: 96.55562425163914
+Epoch 9 Training Loss: 3.6753830909729004 Val Loss: 4.63117194261022 Perplexity: 102.63427513682474
+Saving to /data/users/janmarte/machine-learning-nlp/a2/a2_model.
+Transformer model trained and saved successfully
+
+=== Generation with A2Transformer model ===
+
+
+Prompt: In natural language processing, a Transformer
+Gen: is a hybrid and electronic device used on an array of optical , digital , and <UNK> digital devices . this <UNK> device is used to be <UNK> , with a <UNK> resolution of transmission <UNK> , and so on . <EOS>
+
+Prompt: Is Stockholm the capital of Sweden? Answer yes or no. The answer is
+Gen: given in the article `` <UNK> '' ( `` <UNK> der <UNK> <UNK> '' ) . <EOS>
+
+Prompt: Write a Python program that reverses a list.
+Gen: it follows that the name system is `` constructor . '' <EOS>
+
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]
+Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 97.56it/s]
+
+=== Generation with pretrained OLMo-2 model ===
+
+
+Prompt: In natural language processing, a Transformer
+Gen:  model is a neural architecture that has shown remarkable success on a wide range of NLP tasks. The model is a sequence-to-sequence model based on the feedforward neural network, which allows for bidirectional attention and feedforward connections. The model contains
+
+Prompt: Is Stockholm the capital of Sweden? Answer yes or no. The answer is
+Gen:  no. 2,000 years ago, Sweden was the centre of the largest kingdom in Europe. In 1523, the capital of Sweden was moved to Uppsala, about 200 km east of Stockholm. Stockholm was founded by the Swedish
+
+Prompt: Write a Python program that reverses a list.
+Gen:  The program should reverse the given list by swapping adjacent elements.
+
+For example, if the input list is ['a','b','c'], then the output list should be ['b','c','a']. Note that the output list is a single list and

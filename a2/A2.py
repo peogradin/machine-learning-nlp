@@ -1,3 +1,8 @@
+###
+### Group 5: Jan Marten Winkler, Per-Ola Gradin, Pontus Granli Holmberg
+###
+
+
 # %%
 import os
 import sys
@@ -89,17 +94,6 @@ mlp = A2MLP(A2ModelConfig(
 # output = mlp(x)
 # print(output.shape)  # should be the same shape (2, 10, 100)
 
-# This is optional, since you can use PyTorch's RMSNorm.
-class A2RMSNorm(nn.Module):
-    """RMS layer normalization."""
-    def __init__(self, config):
-        super().__init__()
-        # TODO: Use config.rms_norm_eps
-        # TODO: initalize weights here
-
-    def forward(self, hidden_states):
-        ...
-
 
 class A2Attention(nn.Module):
     """The multi-head attention layer of the Transformer. Uses standard scaled dot-product attention with causal masking."""
@@ -167,7 +161,6 @@ class A2DecoderLayer(nn.Module):
         self.post_attention_norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_swiglu_norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
     def forward(self, hidden_states, rope_rotations):
-        ## TODO: Maybe it should be two different RMSNorm layers?
         residual = hidden_states
         hidden_states = self.attention(hidden_states, rope_rotations)
         # Normalization and residual connection from input
@@ -268,7 +261,6 @@ def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50,
         input_ids = inputs["input_ids"][:, :-1]
     generated = input_ids
     prompt_len = generated.shape[1]
-    #print(generated)
 
     with torch.no_grad():
         for _ in range(max_length):
@@ -279,7 +271,6 @@ def generate(model: A2Transformer, prompt: str, tokenizer, max_length: int = 50,
             else:
                 logits = outputs
             last_logits = logits[:, -1, :] 
-            # print(last_logits.shape)
 
             if topk is not None:
                # take the top-k tokens only
