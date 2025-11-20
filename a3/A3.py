@@ -111,3 +111,114 @@ for topic_idx in range(num_topics):
     print(f"Topic {topic_idx}: {', '.join(top_words)}")
 
 # %%
+
+############### Build vocabulary from Reuters Corpus
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import string
+
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('punkt_tab')
+
+stop_words = set(stopwords.words('english'))
+punct = set(string.punctuation)
+
+# create subset for testing (full corpus is 10,788 documents)
+subset_docs = reuters.fileids()[:3500]
+raw_docs = [reuters.raw(f) for f in subset_docs]
+
+tokenized_docs = []
+for doc in raw_docs:
+    tokens = [w.lower() for w in word_tokenize(doc)]
+    tokens = [w for w in tokens if w.isalpha()]  
+    tokens = [w for w in tokens if w not in stop_words]
+    tokenized_docs.append(tokens)
+
+raw_docs[0], tokenized_docs[0]
+
+from collections import Counter
+
+word_freq = Counter()
+for doc in tokenized_docs:
+    word_freq.update(doc)
+
+threshold = 10
+vocab = {w for w, c in word_freq.items() if c >= threshold}
+
+word2id = {w:i for i, w in enumerate(vocab)}
+id2word = {i:w for w,i in word2id.items()}
+
+corpus = [[word2id[w] for w in doc if w in word2id] 
+          for doc in tokenized_docs]
+
+num_docs = len(corpus)
+total_tokens = sum(len(doc) for doc in corpus)
+
+print("Number of documents:", num_docs)
+print("Total tokens after preprocessing:", total_tokens)
+print("Vocabulary size: ", len(vocab))
+
+# %%
+num_topics = 10
+num_words = len(vocab)
+num_iterations = 200
+
+assignments, doc_topic_counts, topic_word_counts = lda(
+    corpus, num_topics, num_words, num_iterations
+)
+
+print("Document-Topic Counts:\n", doc_topic_counts)
+print("Topic-Word Counts:\n", topic_word_counts)
+
+# %%
+########## MODEL PERFORMANCE ########
+
+# top 20 words per topic
+top_n = 20
+for topic_idx in range(num_topics):
+    # get top n words for each topic
+    top_word_indices = topic_word_counts[topic_idx].argsort()[-top_n:][::-1]
+    top_words = [id2word[idx] for idx in top_word_indices]
+    print(f"Topic {topic_idx}: {', '.join(top_words)}")
+
+# total counts of each word in corpus
+total_word_counts = topic_word_counts.sum(axis=0)  # shape: (num_words,)
+
+# %%
+# UMass coherence for top 20 words
+import math
+
+# get set of word for each doc
+# D_w lists number of docs containing w_l
+doc_wordsets = [set(doc) for doc in corpus] 
+D_w = np.zeros(num_words)                   
+
+# loop over all words, sum if that word appears in a doc: D_w[w] += 1
+for w in range(num_words):
+    D_w[w] = sum(1 for s in doc_wordsets if w in s)
+
+# function to calc umass score for a topic
+def umass_coherence_score(top_word_indices, D_w, doc_wordsets):
+    umass_score = 0.0
+    M = len(top_word_indices)
+
+    for m in range(1, M):
+        w_m = top_word_indices[m]
+        for l in range(m):
+            w_l = top_word_indices[l]
+            D_wm_wl = sum(1 for s in doc_wordsets if w_m in s and w_l in s)
+            umass_score += math.log((D_wm_wl + 1) / (D_w[w_l] + 1e-12))
+    return umass_score
+
+# calc umass scores for all topics
+umass_scores = []
+for topic_idx in range(num_topics):
+    top_word_indices = topic_word_counts[topic_idx].argsort()[-top_n:][::-1]
+    score = umass_coherence_score(top_word_indices, D_w, doc_wordsets)
+    umass_scores.append(score)
+    print(f"Topic {topic_idx} UMass coherence score: {score:.5f}")
+
+print("Average coherence:", np.mean(umass_scores))
+# %%
