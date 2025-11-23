@@ -1,5 +1,8 @@
 # %%
+from calendar import c
+import re
 import nltk
+from tqdm import tqdm
 from transformers import AutoTokenizer
 
 nltk.download("reuters")
@@ -18,7 +21,7 @@ print(reuters.words(documents[0]))  # Words in a document
 
 
 # custom implementation of LDA using collapsed gibbs sampling
-def lda(corpus, num_topics, num_words, num_iterations, alpha=0.1, beta=0.01):
+def lda(corpus, num_topics, num_words, num_iterations, alpha=0.1, beta=0.1):
     # count number of documents and unique words
     num_docs = len(corpus)
 
@@ -41,24 +44,22 @@ def lda(corpus, num_topics, num_words, num_iterations, alpha=0.1, beta=0.01):
             topic_counts[topic] += 1
 
     # Collapsed Gibbs sampling
-    for it in range(num_iterations):
-        for i in range(num_docs):
-            for j, word in enumerate(corpus[i]):
-                current_topic = assignments[i][j]
+    for it in tqdm(range(num_iterations), desc="LDA Gibbs Sampling"):
+        for d in range(num_docs):
+            for j, word in enumerate(corpus[d]):
+                current_topic = assignments[d][j]
 
                 # Decrement counts for current assignment
-                doc_topic_counts[i][current_topic] -= 1
+                doc_topic_counts[d][current_topic] -= 1
                 topic_word_counts[current_topic][word] -= 1
                 topic_counts[current_topic] -= 1
 
-                # Compute probabilities for each topic
-                topic_probs = np.zeros(num_topics)
-                for k in range(num_topics):
-                    topic_probs[k] = (
-                        (doc_topic_counts[i][k] + alpha)
-                        * (topic_word_counts[k][word] + beta)
-                        / (topic_counts[k] + num_words * beta)
-                    )
+                # Compute probabilities for each topic (vectorized)
+                topic_probs = (
+                    (doc_topic_counts[d] + alpha)
+                    * (topic_word_counts[:, word] + beta)
+                    / (topic_counts + beta * num_words)
+                )
 
                 # Normalize probabilities
                 topic_probs /= np.sum(topic_probs)
@@ -67,8 +68,8 @@ def lda(corpus, num_topics, num_words, num_iterations, alpha=0.1, beta=0.01):
                 new_topic = np.random.choice(num_topics, p=topic_probs)
 
                 # Increment counts with new topic
-                assignments[i][j] = new_topic
-                doc_topic_counts[i][new_topic] += 1
+                assignments[d][j] = new_topic
+                doc_topic_counts[d][new_topic] += 1
                 topic_word_counts[new_topic][word] += 1
                 topic_counts[new_topic] += 1  #
 
@@ -87,11 +88,11 @@ corpus = [
 ]
 
 num_words = len(vocab)
-num_topics = 10
-num_iterations = 100
+num_topics = 30
+num_iterations = 200
 
 assignments, doc_topic_counts, topic_word_counts = lda(
-    corpus, num_topics, num_words, num_iterations
+    corpus, num_topics, num_words, num_iterations, alpha=0.01, beta=0.01
 )
 
 print("Document-Topic Counts:\n", doc_topic_counts)
@@ -118,22 +119,24 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import string
 
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('punkt_tab')
+nltk.download("stopwords")
+nltk.download("punkt")
+nltk.download("punkt_tab")
 
-stop_words = set(stopwords.words('english'))
+stop_words = set(stopwords.words("english"))
 punct = set(string.punctuation)
 
 # create subset for testing (full corpus is 10,788 documents)
-subset_docs = reuters.fileids()[:3500]
+num_docs = 2000
+subset_docs = reuters.fileids()[:num_docs]
 raw_docs = [reuters.raw(f) for f in subset_docs]
 
 tokenized_docs = []
 for doc in raw_docs:
     tokens = [w.lower() for w in word_tokenize(doc)]
-    tokens = [w for w in tokens if w.isalpha()]  
+    tokens = [w for w in tokens if w.isalpha()]
     tokens = [w for w in tokens if w not in stop_words]
+    # if len(tokens) > 0:
     tokenized_docs.append(tokens)
 
 raw_docs[0], tokenized_docs[0]
@@ -144,14 +147,13 @@ word_freq = Counter()
 for doc in tokenized_docs:
     word_freq.update(doc)
 
-threshold = 10
+threshold = 4
 vocab = {w for w, c in word_freq.items() if c >= threshold}
 
-word2id = {w:i for i, w in enumerate(vocab)}
-id2word = {i:w for w,i in word2id.items()}
+word2id = {w: i for i, w in enumerate(vocab)}
+id2word = {i: w for w, i in word2id.items()}
 
-corpus = [[word2id[w] for w in doc if w in word2id] 
-          for doc in tokenized_docs]
+corpus = [[word2id[w] for w in doc if w in word2id] for doc in tokenized_docs]
 
 num_docs = len(corpus)
 total_tokens = sum(len(doc) for doc in corpus)
@@ -161,12 +163,12 @@ print("Total tokens after preprocessing:", total_tokens)
 print("Vocabulary size: ", len(vocab))
 
 # %%
-num_topics = 10
+num_topics = 20
 num_words = len(vocab)
-num_iterations = 200
+num_iterations = 150
 
 assignments, doc_topic_counts, topic_word_counts = lda(
-    corpus, num_topics, num_words, num_iterations
+    corpus, num_topics, num_words, num_iterations, alpha=0.1, beta=0.1
 )
 
 print("Document-Topic Counts:\n", doc_topic_counts)
@@ -174,7 +176,6 @@ print("Topic-Word Counts:\n", topic_word_counts)
 
 # %%
 ########## MODEL PERFORMANCE ########
-
 # top 20 words per topic
 top_n = 20
 for topic_idx in range(num_topics):
@@ -187,17 +188,65 @@ for topic_idx in range(num_topics):
 total_word_counts = topic_word_counts.sum(axis=0)  # shape: (num_words,)
 
 # %%
+
+# total counts of each word in corpus
+total_word_counts = topic_word_counts.sum(axis=0)  # shape: (num_words,)
+
+# top 20 words per topic by relative frequency
+top_n = 20
+for topic_idx in range(num_topics):
+    # get top n words for each topic
+    relative_freq = topic_word_counts[topic_idx] / total_word_counts
+    top_word_indices = relative_freq.argsort()[-top_n:][::-1]
+    top_words = [id2word[idx] for idx in top_word_indices]
+    print(f"Topic {topic_idx}: {', '.join(top_words)}")
+
+
+# %%
+# Comparison to actual Reuters categories
+category_topic_counts = np.zeros((len(reuters.categories()), num_topics))
+
+for doc_idx, fileid in enumerate(subset_docs):
+    categories = reuters.categories(fileid)
+    for category in categories:
+        category_idx = reuters.categories().index(category)
+        # find argmax topic for the document
+        # max_topic_idx = doc_topic_counts[doc_idx].argmax()
+        # category_topic_counts[category_idx][max_topic_idx] += 1
+        category_topic_counts[category_idx] += doc_topic_counts[doc_idx]
+
+
+print("Category-Topic Counts:\n", category_topic_counts)
+
+# show confusion matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(20, 20))
+sns.heatmap(
+    category_topic_counts,
+    xticklabels=[f"Topic {i}" for i in range(num_topics)],
+    yticklabels=reuters.categories(),
+    cmap="YlGnBu",
+    annot=True,
+    fmt=".0f",
+)
+
+print("Count per topic:", category_topic_counts.sum(axis=0))
+
+# %%
 # UMass coherence for top 20 words
 import math
 
 # get set of word for each doc
 # D_w lists number of docs containing w_l
-doc_wordsets = [set(doc) for doc in corpus] 
-D_w = np.zeros(num_words)                   
+doc_wordsets = [set(doc) for doc in corpus]
+D_w = np.zeros(num_words)
 
 # loop over all words, sum if that word appears in a doc: D_w[w] += 1
 for w in range(num_words):
     D_w[w] = sum(1 for s in doc_wordsets if w in s)
+
 
 # function to calc umass score for a topic
 def umass_coherence_score(top_word_indices, D_w, doc_wordsets):
@@ -211,6 +260,7 @@ def umass_coherence_score(top_word_indices, D_w, doc_wordsets):
             D_wm_wl = sum(1 for s in doc_wordsets if w_m in s and w_l in s)
             umass_score += math.log((D_wm_wl + 1) / (D_w[w_l] + 1e-12))
     return umass_score
+
 
 # calc umass scores for all topics
 umass_scores = []
