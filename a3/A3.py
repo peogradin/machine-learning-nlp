@@ -97,8 +97,6 @@ for doc in raw_docs:
     tokens = [w for w in tokens if w not in stop_words]
     tokenized_docs.append(tokens)
 
-raw_docs[0], tokenized_docs[0]
-
 word_freq = Counter()
 for doc in tokenized_docs:
     word_freq.update(doc)
