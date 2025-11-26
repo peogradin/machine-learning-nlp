@@ -11,17 +11,32 @@ from transformers import (
     AutoTokenizer,
     TrainingArguments,
 )
-
-from .data_utils import build_prompt, create_data_collator, tokenize_helper
-from .lora import make_lora_model
-from .utils import (
-    RougeMetricComputer,
-    compare_models_on_examples,
-    create_stratification_label,
-    make_trainer,
-    num_trainable_parameters,
-    print_results_table,
-)
+try:
+    from .data_utils import build_prompt, create_data_collator, tokenize_helper
+except Exception:
+    from data_utils import build_prompt, create_data_collator, tokenize_helper
+try:
+    from .lora import make_lora_model
+except Exception:
+    from lora import make_lora_model
+try:
+    from .utils import (
+        RougeMetricComputer,
+        compare_models_on_examples,
+        create_stratification_label,
+        make_trainer,
+        num_trainable_parameters,
+        print_results_table,
+    )
+except Exception:
+    from utils import (
+        RougeMetricComputer,
+        compare_models_on_examples,
+        create_stratification_label,
+        make_trainer,
+        num_trainable_parameters,
+        print_results_table,
+    )
 
 # Global config
 os.environ["TOKENIZERS_PARALLELISM"] = "false"

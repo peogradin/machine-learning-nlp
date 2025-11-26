@@ -1,4 +1,5 @@
 # %%
+# %%
 import os
 import time
 
@@ -9,8 +10,11 @@ from transformers import (
     TrainingArguments,
 )
 
-from utils import make_trainer, num_trainable_parameters
-
+try:
+    from .utils import make_trainer, num_trainable_parameters
+except Exception:
+    from utils import make_trainer, num_trainable_parameters
+# %%
 # -----------------------------------------------------------------------------
 # STUDENT TODOs
 # -----------------------------------------------------------------------------
@@ -34,23 +38,42 @@ class LoRA(nn.Module):
 
         # Always keep a reference to the frozen pretrained weight matrix.
         self.pretrained = pretrained
-
+        self.pretrained.requires_grad = False
         # TODO[student]: Initialize the low-rank adapter matrices A and B.
         #   * Inspect `pretrained.weight.shape` to find the input and output dims.
         #   * Create `self.A` (shape: in_dim -> rank) and `self.B` (rank -> out_dim).
         #   * Initialize A with a small normal distribution and B with zeros.
         #   * Store the scaling factor alpha / rank in `self.scaling`.
         # Remove the line below once your implementation is ready.
-        raise NotImplementedError("Initialize LoRA adapter weights (A, B) and scaling.")
+        self.in_features = pretrained.in_features
+        self.out_features = pretrained.out_features
+        self.A = nn.Linear(self.in_features, rank, bias=False)
+        self.B = nn.Linear(rank, self.out_features, bias=False)
+        self.scaling = alpha / rank
+        nn.init.normal_(self.A.weight, mean=0, std = 1e-4)
+        nn.init.constant_(self.B.weight, val=0.0)
 
     def forward(self, x):
         # TODO[student]: Implement the LoRA forward pass.
         #   * Compute the frozen projection using `self.pretrained(x)`.
         #   * Add the low-rank update `self.B(self.A(x)) * self.scaling`.
         #   * Return the combined result.
-        raise NotImplementedError("Implement the LoRA forward pass.")
+        pretrained_out = self.pretrained(x)
+        lora_out = self.B(self.A(x)) * self.scaling
+        return pretrained_out + lora_out
 
-
+# in_features = 768
+# out_features = 512
+# rank = 6
+# alpha = 12
+# pretrained_test = nn.Linear(in_features, out_features)
+# lora_test = LoRA(pretrained_test, rank, alpha)
+# print("A and B:\n", lora_test.A, lora_test.B)
+# test_tensor = torch.ones(in_features)
+# out = pretrained_test(test_tensor)
+# lora_out = lora_test(test_tensor)
+# print("output:\n", out)
+# print("lora output:\n", lora_out)
 # %%
 def extract_lora_targets(model):
     """
