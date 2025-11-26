@@ -1,3 +1,4 @@
+# %%
 import os
 import time
 
@@ -8,8 +9,11 @@ from transformers import (
     TrainingArguments,
 )
 
-from .utils import make_trainer, num_trainable_parameters
-
+try:
+    from .utils import make_trainer, num_trainable_parameters
+except Exception:
+    from utils import make_trainer, num_trainable_parameters
+# %%
 # -----------------------------------------------------------------------------
 # STUDENT TODOs
 # -----------------------------------------------------------------------------
@@ -49,7 +53,14 @@ class LoRA(nn.Module):
         #   * Return the combined result.
         raise NotImplementedError("Implement the LoRA forward pass.")
 
+in_features = 768
+out_features = 512
+pretrained_test = nn.Linear(in_features, out_features)
 
+test_tensor = torch.ones(in_features)
+out = pretrained_test(test_tensor)
+print(out.shape)
+# %%
 def extract_lora_targets(model):
     """
     Decide which Linear sub-modules to wrap with LoRA.
