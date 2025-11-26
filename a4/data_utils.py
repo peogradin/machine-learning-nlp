@@ -1,6 +1,8 @@
+# %%
 import copy
 
 import torch
+from transformers import AutoTokenizer
 
 # -----------------------------------------------------------------------------
 # STUDENT TODOs: Prompt + Tokenization utilities
@@ -14,6 +16,7 @@ import torch
 # reference after attempting the implementation on your own.
 # -----------------------------------------------------------------------------
 
+# %%
 
 def build_prompt(example, prompt_no_input, prompt_with_input):
     """
@@ -41,8 +44,12 @@ def build_prompt(example, prompt_no_input, prompt_with_input):
     #   1. Read out instruction/input/output from the example (be robust to empty input).
     #   2. Pick the correct template depending on whether "input" contains text.
     #   3. Format the template and return {"prompt": prompt_text, "answer": output_text}.
-    raise NotImplementedError("Implement prompt construction for Alpaca examples.")
 
+    template = prompt_with_input if inp.strip() else prompt_no_input 
+    prompt = template.format(instruction=instruction, input=inp)
+    return {"prompt": prompt, "answer": output, "input": inp, "instruction": instruction, "output": output}
+
+# %%
 
 def tokenize_helper(batch, tokenizer, max_length):
     """
@@ -69,8 +76,22 @@ def tokenize_helper(batch, tokenizer, max_length):
     #   2. Concatenate, truncate, and create an attention mask of 1s.
     #   3. Build labels using -100 for the prompt span and answer token IDs afterward.
     #      (Hint: copy answer IDs so truncation does not mutate the tokenizer output.)
-    raise NotImplementedError("Implement tokenization + label masking for SFT.")
 
+    tokenized_prompt = tokenizer(batch["prompt"], add_special_tokens=False)["input_ids"]
+    tokenized_answer = tokenizer(batch["answer"], add_special_tokens=False)["input_ids"]
+
+    input_ids = tokenized_prompt + tokenized_answer
+    input_ids = input_ids[:max_length]
+
+    attention_mask = [1] * len(input_ids)
+    labels = [-100] * len(tokenized_prompt) + tokenized_answer
+
+    return {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "labels": labels[:max_length],
+    }
+  
 
 def create_data_collator(tokenizer):
     """
@@ -110,25 +131,102 @@ def create_data_collator(tokenizer):
         labels_list = [torch.tensor(example["labels"], dtype=torch.long) for example in batch]
 
         # Find max length in this batch
-        max_len = "NotImplementedError"
+        max_len = max(len(ids) for ids in input_ids_list)
 
         # Helper pad function: right-pad to max_len
         def pad_to_max(x_list, pad_value):
-            # ...
-            pass
+            for i in range(len(x_list)):
+                pad_length = max_len - len(x_list[i])
+                if pad_length > 0:
+                    padding = torch.full((pad_length, ), pad_value, dtype=torch.long)
+                    x_list[i] = torch.cat([x_list[i], padding], dim=0)
+            return x_list
 
         # Use tokenizer.pad_token_id for inputs, 0 for attention_mask, -100 for labels
-        pad_id = "NotImplementedError"
+        pad_id = tokenizer.pad_token_id or 0
 
         batch_input_ids = pad_to_max(input_ids_list, pad_value=pad_id)
         batch_attention_mask = pad_to_max(attention_masks_list, pad_value=0)
         batch_labels = pad_to_max(labels_list, pad_value=-100)
 
+        # Stack into tensors
         batch = {
-            "input_ids": batch_input_ids,
-            "attention_mask": batch_attention_mask,
-            "labels": batch_labels,
+            "input_ids": torch.stack(batch_input_ids),
+            "attention_mask": torch.stack(batch_attention_mask),
+            "labels": torch.stack(batch_labels),
         }
         return batch
 
-    raise NotImplementedError("Implement the causal-LM data collator.")
+    return data_collator
+
+
+# # %%
+# Example usage and test cases
+
+
+# PROMPT_NO_INPUT = """
+# Below is an instruction that describes a task. 
+# Write a response that appropriately completes the request.
+
+# ### Instruction:
+# {instruction}
+
+# ### Response:
+# """.strip()
+
+# PROMPT_WITH_INPUT = """
+# Below is an instruction that describes a task, paired with an input that provides further context. 
+# Write a response that appropriately completes the request.
+
+# ### Instruction:
+# {instruction}
+
+# ### Input:
+# {input}
+
+# ### Response:
+# """.strip()
+
+# ds = [
+#     {
+#         "instruction": "Translate the following English text to French.",
+#         "input": "Hello, how are you?",
+#         "output": "Bonjour, comment ça va?"
+#     },
+#     {
+#         "instruction": "Summarize the following text.",
+#         "input": "",
+#         "output": "This is a summary."
+#     }
+# ]
+
+# ds_sft = map(lambda x: build_prompt(x, PROMPT_NO_INPUT, PROMPT_WITH_INPUT), ds)
+
+# list(ds_sft) 
+
+
+# DEFAULT_MODEL_NAME_OR_PATH = "/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B"
+
+# tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL_NAME_OR_PATH)
+# if tokenizer.pad_token is None:
+#     tokenizer.pad_token = tokenizer.eos_token or tokenizer.unk_token
+
+# # %%
+
+# batch = tokenize_helper(
+#     {
+#         "prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nTranslate the following English text to French.\n\n### Response:\n",
+#         "answer": "Bonjour, comment ça va?"
+#     },
+#     tokenizer,
+#     max_length=20,
+# )
+# batch
+# # %%
+# collator = create_data_collator(tokenizer)
+# batch_collated = collator([batch, batch])
+
+# batch_collated
+
+# print(batch_collated["input_ids"].shape)
+# # %%

@@ -70,7 +70,7 @@ def extract_lora_targets(model):
     for name, l in model.named_modules():
         if isinstance(l, nn.Linear):
             # Example condition: check if 'q_proj' is in the name
-            if 'proj' in name:
+            if 'q_proj' in name or 'k_proj' in name or 'v_proj' in name or 'o_proj' in name:
                 submodules[name] = l
     return submodules
 
