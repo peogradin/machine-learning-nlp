@@ -1,3 +1,4 @@
+# %%
 import os
 import time
 
@@ -8,7 +9,7 @@ from transformers import (
     TrainingArguments,
 )
 
-from .utils import make_trainer, num_trainable_parameters
+from utils import make_trainer, num_trainable_parameters
 
 # -----------------------------------------------------------------------------
 # STUDENT TODOs
@@ -50,6 +51,7 @@ class LoRA(nn.Module):
         raise NotImplementedError("Implement the LoRA forward pass.")
 
 
+# %%
 def extract_lora_targets(model):
     """
     Decide which Linear sub-modules to wrap with LoRA.
@@ -62,7 +64,23 @@ def extract_lora_targets(model):
       * Return a dict {qualified_name: module}.
     """
     # TODO[student]: populate the dictionary with eligible layers.
-    raise NotImplementedError("Select and return the target Linear layers.")
+
+    submodules = {}
+
+    for name, l in model.named_modules():
+        if isinstance(l, nn.Linear):
+            # Example condition: check if 'q_proj' is in the name
+            if 'proj' in name:
+                submodules[name] = l
+    return submodules
+
+# %%
+DEFAULT_MODEL_NAME_OR_PATH = "/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B"
+model = pretrained_model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL_NAME_OR_PATH)
+
+extract_lora_targets(model)
+
+# %%
 
 
 def replace_layers(model, named_layers):
