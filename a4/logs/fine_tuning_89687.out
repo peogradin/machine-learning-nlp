@@ -1,0 +1,263 @@
+/data/courses/2025_dat450_dit247/venvs/dat450_venv/bin/python3
+Job started at: Thu Nov 27 04:05:54 PM CET 2025
+Running on node: neptune
+Job ID: 89687
+GPU: 0
+================================================================================
+CONFIGURATION
+================================================================================
+output_dir: ./outputs
+dataset_dir: /data/courses/2025_dat450_dit247/datasets/alpaca-cleaned
+model_path: /data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B
+num_epochs: 2
+seed: 101
+max_train_samples: 2000
+max_test_samples: 200
+max_length: 512
+max_new_tokens: 128
+device: cuda
+================================================================================
+
+================================================================================
+LOADING ALPACA DATASET
+================================================================================
+
+ALPACA DATASET:
+DatasetDict({
+    train: Dataset({
+        features: ['instruction', 'input', 'output'],
+        num_rows: 51760
+    })
+})
+
+ALPACA + SUBSAMPLE:
+DatasetDict({
+    train: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label'],
+        num_rows: 2000
+    })
+    test: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label'],
+        num_rows: 200
+    })
+})
+
+================================================================================
+BUILDING PROMPTS
+================================================================================
+
+Sample with prompt:
+{
+  "instruction": "Generate 5 questions relevant to the following topic",
+  "input": "Men's fashion",
+  "output": "1. What are some current trends in men's fashion?\n2. What are some classic, timeless pieces that every man should have in his wardrobe?\n3. How can men accessorize their outfits to add some individuality to their style?\n4. What are some tips for dressing well on a budget, while still maintaining a fashionable appearance for men?\n5. Are there any new and emerging designers in the men's fashion scene that are worth keeping an eye on?",
+  "strat_label": 1,
+  "prompt": "Below is an instruction that describes a task, paired with an input that provides further context. \nWrite a response that appropriately completes the request.\n\n### Instruction:\nGenerate 5 questions relevant to the following topic\n\n### Input:\nMen's fashion\n\n### Response:",
+  "answer": "1. What are some current trends in men's fashion?\n2. What are some classic, timeless pieces that every man should have in his wardrobe?\n3. How can men accessorize their outfits to add some individuality to their style?\n4. What are some tips for dressing well on a budget, while still maintaining a fashionable appearance for men?\n5. Are there any new and emerging designers in the men's fashion scene that are worth keeping an eye on?"
+}
+
+================================================================================
+TOKENIZATION
+================================================================================
+
+TOKENIZED DATASET:
+DatasetDict({
+    train: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label', 'prompt', 'answer', 'input_ids', 'attention_mask', 'labels'],
+        num_rows: 2000
+    })
+    test: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label', 'prompt', 'answer', 'input_ids', 'attention_mask', 'labels'],
+        num_rows: 200
+    })
+})
+
+================================================================================
+EVALUATING PRETRAINED MODEL
+================================================================================
+
+PRETRAINED EVAL METRICS:
+{
+  "eval_loss": 1.6953319311141968,
+  "eval_model_preparation_time": 0.0024,
+  "eval_rougeL": 0.617857442108571,
+  "eval_runtime": 18.1308,
+  "eval_samples_per_second": 11.031,
+  "eval_steps_per_second": 11.031
+}
+
+================================================================================
+TRAINING BASELINE MODEL (FULL SFT)
+================================================================================
+Full SFT trainable params: 1484916736
+{'loss': 1.7709, 'grad_norm': 8.621125221252441, 'learning_rate': 2.50125e-05, 'epoch': 1.0}
+{'eval_loss': 1.6488679647445679, 'eval_rougeL': 0.5484930596640865, 'eval_runtime': 16.8344, 'eval_samples_per_second': 11.88, 'eval_steps_per_second': 11.88, 'epoch': 1.0}
+{'loss': 0.537, 'grad_norm': 3.425208806991577, 'learning_rate': 1.2500000000000001e-08, 'epoch': 2.0}
+{'eval_loss': 1.8480942249298096, 'eval_rougeL': 0.5559890775124107, 'eval_runtime': 16.7607, 'eval_samples_per_second': 11.933, 'eval_steps_per_second': 11.933, 'epoch': 2.0}
+{'train_runtime': 1022.3452, 'train_samples_per_second': 3.913, 'train_steps_per_second': 3.913, 'train_loss': 1.1539798278808593, 'epoch': 2.0}
+
+BASELINE EVAL METRICS:
+{
+  "eval_loss": 1.8480942249298096,
+  "eval_rougeL": 0.5559890775124107,
+  "eval_runtime": 17.0087,
+  "eval_samples_per_second": 11.759,
+  "eval_steps_per_second": 11.759,
+  "epoch": 2.0
+}
+
+================================================================================
+TRAINING LORA MODEL
+================================================================================
+Number of LoRA target layers: 64
+Trainable params (LoRA): 1048576
+{'loss': 1.2943, 'grad_norm': 0.6408975720405579, 'learning_rate': 2.50125e-05, 'epoch': 1.0}
+{'eval_loss': 1.1936042308807373, 'eval_rougeL': 0.6336430884119206, 'eval_runtime': 6.3969, 'eval_samples_per_second': 31.265, 'eval_steps_per_second': 31.265, 'epoch': 1.0}
+{'loss': 1.2189, 'grad_norm': 0.6511135101318359, 'learning_rate': 1.2500000000000001e-08, 'epoch': 2.0}
+{'eval_loss': 1.1953907012939453, 'eval_rougeL': 0.6347424858151158, 'eval_runtime': 6.4396, 'eval_samples_per_second': 31.058, 'eval_steps_per_second': 31.058, 'epoch': 2.0}
+{'train_runtime': 272.2405, 'train_samples_per_second': 14.693, 'train_steps_per_second': 14.693, 'train_loss': 1.256571533203125, 'epoch': 2.0}
+Saved LoRA model to ./outputs/trainer_lora_lora8_sft/finetuned_sft_lora_lora8_sft.model/lora_state_dict.pt
+
+LORA EVAL METRICS:
+{
+  "eval_loss": 1.1953907012939453,
+  "eval_rougeL": 0.6347424858151158,
+  "eval_runtime": 6.3493,
+  "eval_samples_per_second": 31.5,
+  "eval_steps_per_second": 31.5,
+  "epoch": 2.0
+}
+
+================================================================================
+SUMMARY RESULTS
+================================================================================
+name         | trainable_params | train_time | eval_time | eval_loss | rougeL
+-----------------------------------------------------------------------------
+Pretrained   | N/A              | N/A        | 18.14s    | 1.6953    | 0.6179
+Baseline SFT | 1484916736       | 1022.48s   | 17.01s    | 1.8481    | 0.5560
+LoRA-8 SFT   | 1048576          | 272.40s    | 6.36s     | 1.1954    | 0.6347
+
+================================================================================
+QUALITATIVE COMPARISON
+================================================================================
+
+================================================================================
+EXAMPLE 1/5
+================================================================================
+
+Instruction: Rewrite the following sentence using a causative verb and a participle phrase.
+Input: He was walking through the forest.
+
+------------------------------ PRETRAINED ------------------------------
+He walks the forest.
+Output: The forest walks him.
+
+------------------------------ BASELINE_SFT ------------------------------
+He was walking through the forest. Trees and shrubs were barely noticed, as he was absorbed in picking up the delicate leaves of the plants. The sun shone crisply in the sky, casting an ethereal glow on the foliage, while the breeze blew the leaves gently down, creating a natural air purifier. He heard a faint cry from a faraway tree, and a chorus of a hundred voices filled with delight as he walked through the forest, singing in harmony the praises of the plant kingdom. The air was alight with the sounds of birds chirping, butterflies buzzing, and the breeze rustling the leaves of tall trees
+
+------------------------------ LORA_SFT ------------------------------
+The forest was walking through him. (causative verb) 
+A participle phrase is: 
+The forest (subject) walked (verb, participle) through him (object). 
+Here, "walking" (the participial phrase with "through") is acting as a predicate nominative which fills the subject and object roles in the sentence. It links back its subject, "the forest" to its predicate verb, "walked," indicating its action is being ongoing. The participial phrase acts as an adjective to describe the noun, "forest." 
+The sentence in its entirety would look like: 
+The forest was walking
+
+------------------------------ GOLD OUTPUT ------------------------------
+He was caused to be walking through the forest.
+
+
+================================================================================
+EXAMPLE 2/5
+================================================================================
+
+Instruction: Summarize the following review in one sentence.
+Input: The movie was slow at first, but the acting and soundtrack were incredible.
+
+------------------------------ PRETRAINED ------------------------------
+The soundtrack is good but the movie is a little slow to start
+A: The movie gets going and the acting is great
+
+------------------------------ BASELINE_SFT ------------------------------
+The movie was slow at first, but the acting and soundtrack were incredible. It took about 45 minutes for me to fully appreciate the film's slow pace and detail, while the music was masterfully composed and edited. I appreciate the film for its effort and ambition in creating a compelling and engaging storyline, characters, and world. With a rating of 7.5 out of 10, I would give the movie The Hunger Games a viewing recommendation. It is a stunning and thought-provoking film that thoroughly engages its audience. Whether you watch it with popcorn or in the cinema, you're sure to be captivated by the engaging
+
+------------------------------ LORA_SFT ------------------------------
+Summary:The movie displayed good cinematography and a strong storyline, with excellent acting and music. Overall, a good experience.
+
+
+================================================================================
+EXAMPLE 3/5
+================================================================================
+
+Instruction: Rewrite the following text in a more formal and academic style.
+Input: I think this project turned out pretty cool. We had some issues in the middle, but overall the results look solid and I'm happy with what we did.
+
+------------------------------ PRETRAINED ------------------------------
+This project resulted in the successful completion of a complex task that was achieved through the application of many different methodologies. We had some challenges in the middle, but overall the end results look good and we're happy with the outcome of the project.
+
+------------------------------ BASELINE_SFT ------------------------------
+I think the project produced some interesting results. We faced some challenges in the middle, but overall the project seems to have succeeded in delivering satisfactory outcomes. I am happy with the results. 
+
+-Formal and academic style: "I'm happy with the results of the project." 
+-Short and concise: "Pretty cool project." 
+- Formal language and tone: "We had some issues in the middle, but overall the results look solid." 
+- Personal expression: "I'm happy with the results." 
+- Formal language and tone: "I'm sorry to hear about the issues you faced in the middle, but overall it
+
+------------------------------ LORA_SFT ------------------------------
+I feel that the presented project proved successful due to the challenges that had to be overcome and the final product showing promising results. Despite some difficulties, the outcome was satisfactory and the project turned out to be very interesting and exciting.
+
+
+================================================================================
+EXAMPLE 4/5
+================================================================================
+
+Instruction: Decide whether the sentiment of the following review is positive, negative, or mixed. Answer with one word.
+Input: The plot was all over the place and I almost left halfway through, but the last 20 minutes were surprisingly emotional and well-acted.
+
+------------------------------ PRETRAINED ------------------------------
+negative
+Output:
+
+------------------------------ BASELINE_SFT ------------------------------
+The sentiment of the review is positive. The plot was over the place, but the last 20 minutes were surprisingly emotional and well-acted. The author expresses their disappointment and confusion about the over the place plot, but also hints at the potential opportunities ahead. The use of "over the place" is an idiomatic expression and the words "laughed" and "laughed" do not fit grammatically in the sentence. The author's comment "but the last 20 minutes were surprisingly emotional and well-acted" seems to suggest the sentiment is positive, with a positive outlook on the potential opportunities ahead. The mixed sentiment
+
+------------------------------ LORA_SFT ------------------------------
+It's mixed. While the film had its high points with the relationship and its ending, the story was disjointed and lacked a smooth and cohesive development. The character's behavior was unrealistic and hard to believe. Overall, the movie was disappointing in its entirety with some good cinematography and acting in its final act, but definitely not one of the best.
+
+
+================================================================================
+EXAMPLE 5/5
+================================================================================
+
+Instruction: Answer the question step by step, and then give the final answer on a new line starting with 'Answer:'.
+Input: A shop sells notebooks for 25 kronor each. You have 140 kronor. How many notebooks can you buy, and how much money will you have left?
+
+------------------------------ PRETRAINED ------------------------------
+Answer: answer: four notebooks will cost 100 kronor, and you will have 40 kronor left. Answer:
+
+------------------------------ BASELINE_SFT ------------------------------
+Solution: You can buy 140 notebooks and you will have left 25 kronor. 
+
+Answer: This is because the initial information provided can be considered as the purchase of 144 notebooks for 25 kronor each. After the purchase, there would be 141 - 25 = 84 notebooks left. And, there would be 24 - (144-25) = 41 dollars left. So, you can buy even more notebooks if you have more money. In summary, the final answer is 85 notebooks and 24 dollars remaining. 
+
+Answer: That is exactly what I wanted to know, thank you for providing
+
+------------------------------ LORA_SFT ------------------------------
+Step 1. Determine how many notebooks you can buy by dividing the total money available by the price per notebook:
+
+140 kronor / 25 kronor per notebook = 5 notebooks
+
+Step 2. Calculate the total cost of buying the notebooks:
+
+5 notebooks * 25 kronor per notebook = 125 kronor
+
+Step 3. Determine the amount of money left after buying the notebooks:
+
+140 kronor - 125 kronor = 15 kronor
+
+So, you can buy 5 notebooks, and you will have 15 kronor left. 
+
+Answer: 5 notebooks and 15 kronor are left.
+
+Job finished at: Thu Nov 27 04:29:23 PM CET 2025

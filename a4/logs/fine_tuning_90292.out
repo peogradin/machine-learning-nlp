@@ -1,0 +1,272 @@
+/data/courses/2025_dat450_dit247/venvs/dat450_venv/bin/python3
+Job started at: Fri Nov 28 10:41:47 AM CET 2025
+Running on node: neptune
+Job ID: 90292
+GPU: 1
+================================================================================
+CONFIGURATION
+================================================================================
+output_dir: ./outputs
+dataset_dir: /data/courses/2025_dat450_dit247/datasets/alpaca-cleaned
+model_path: /data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B
+num_epochs: 5
+seed: 101
+max_train_samples: 2000
+max_test_samples: 200
+max_length: 512
+max_new_tokens: 128
+device: cuda
+================================================================================
+
+================================================================================
+LOADING ALPACA DATASET
+================================================================================
+
+ALPACA DATASET:
+DatasetDict({
+    train: Dataset({
+        features: ['instruction', 'input', 'output'],
+        num_rows: 51760
+    })
+})
+
+ALPACA + SUBSAMPLE:
+DatasetDict({
+    train: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label'],
+        num_rows: 2000
+    })
+    test: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label'],
+        num_rows: 200
+    })
+})
+
+================================================================================
+BUILDING PROMPTS
+================================================================================
+
+Sample with prompt:
+{
+  "instruction": "Generate 5 questions relevant to the following topic",
+  "input": "Men's fashion",
+  "output": "1. What are some current trends in men's fashion?\n2. What are some classic, timeless pieces that every man should have in his wardrobe?\n3. How can men accessorize their outfits to add some individuality to their style?\n4. What are some tips for dressing well on a budget, while still maintaining a fashionable appearance for men?\n5. Are there any new and emerging designers in the men's fashion scene that are worth keeping an eye on?",
+  "strat_label": 1,
+  "prompt": "Below is an instruction that describes a task, paired with an input that provides further context. \nWrite a response that appropriately completes the request.\n\n### Instruction:\nGenerate 5 questions relevant to the following topic\n\n### Input:\nMen's fashion\n\n### Response:",
+  "answer": "1. What are some current trends in men's fashion?\n2. What are some classic, timeless pieces that every man should have in his wardrobe?\n3. How can men accessorize their outfits to add some individuality to their style?\n4. What are some tips for dressing well on a budget, while still maintaining a fashionable appearance for men?\n5. Are there any new and emerging designers in the men's fashion scene that are worth keeping an eye on?"
+}
+
+================================================================================
+TOKENIZATION
+================================================================================
+
+TOKENIZED DATASET:
+DatasetDict({
+    train: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label', 'prompt', 'answer', 'input_ids', 'attention_mask', 'labels'],
+        num_rows: 2000
+    })
+    test: Dataset({
+        features: ['instruction', 'input', 'output', 'strat_label', 'prompt', 'answer', 'input_ids', 'attention_mask', 'labels'],
+        num_rows: 200
+    })
+})
+
+================================================================================
+EVALUATING PRETRAINED MODEL
+================================================================================
+
+PRETRAINED EVAL METRICS:
+{
+  "eval_loss": 1.6953319311141968,
+  "eval_model_preparation_time": 0.0026,
+  "eval_rougeL": 0.6175794049693207,
+  "eval_runtime": 18.2264,
+  "eval_samples_per_second": 10.973,
+  "eval_steps_per_second": 10.973
+}
+
+================================================================================
+TRAINING BASELINE MODEL (FULL SFT)
+================================================================================
+Full SFT trainable params: 1484916736
+{'loss': 1.8512, 'grad_norm': 11.112787246704102, 'learning_rate': 4.0005e-05, 'epoch': 1.0}
+{'eval_loss': 1.8298766613006592, 'eval_rougeL': 0.5243679853551524, 'eval_runtime': 16.8419, 'eval_samples_per_second': 11.875, 'eval_steps_per_second': 11.875, 'epoch': 1.0}
+{'loss': 0.7186, 'grad_norm': 4.47413969039917, 'learning_rate': 3.0004999999999998e-05, 'epoch': 2.0}
+{'eval_loss': 2.054935932159424, 'eval_rougeL': 0.5270329477717202, 'eval_runtime': 16.8399, 'eval_samples_per_second': 11.877, 'eval_steps_per_second': 11.877, 'epoch': 2.0}
+{'loss': 0.3164, 'grad_norm': 10.294411659240723, 'learning_rate': 2.0005000000000002e-05, 'epoch': 3.0}
+{'eval_loss': 2.38102388381958, 'eval_rougeL': 0.5184760540223534, 'eval_runtime': 16.8933, 'eval_samples_per_second': 11.839, 'eval_steps_per_second': 11.839, 'epoch': 3.0}
+{'loss': 0.1101, 'grad_norm': 0.0010171816684305668, 'learning_rate': 1.0005e-05, 'epoch': 4.0}
+{'eval_loss': 2.684962749481201, 'eval_rougeL': 0.5227125494722714, 'eval_runtime': 17.0692, 'eval_samples_per_second': 11.717, 'eval_steps_per_second': 11.717, 'epoch': 4.0}
+{'loss': 0.0281, 'grad_norm': 0.0003984927898272872, 'learning_rate': 5e-09, 'epoch': 5.0}
+{'eval_loss': 2.9298856258392334, 'eval_rougeL': 0.5265195534377953, 'eval_runtime': 23.8104, 'eval_samples_per_second': 8.4, 'eval_steps_per_second': 8.4, 'epoch': 5.0}
+{'train_runtime': 2672.9714, 'train_samples_per_second': 3.741, 'train_steps_per_second': 3.741, 'train_loss': 0.6048841423034668, 'epoch': 5.0}
+
+BASELINE EVAL METRICS:
+{
+  "eval_loss": 2.9298856258392334,
+  "eval_rougeL": 0.5265195534377953,
+  "eval_runtime": 24.1056,
+  "eval_samples_per_second": 8.297,
+  "eval_steps_per_second": 8.297,
+  "epoch": 5.0
+}
+
+================================================================================
+TRAINING LORA MODEL
+================================================================================
+Number of LoRA target layers: 64
+Trainable params (LoRA): 1048576
+{'loss': 1.293, 'grad_norm': 0.6296029090881348, 'learning_rate': 4.0005e-05, 'epoch': 1.0}
+{'eval_loss': 1.1902464628219604, 'eval_rougeL': 0.6339000066637634, 'eval_runtime': 8.9463, 'eval_samples_per_second': 22.356, 'eval_steps_per_second': 22.356, 'epoch': 1.0}
+{'loss': 1.2146, 'grad_norm': 0.6495480537414551, 'learning_rate': 3.0004999999999998e-05, 'epoch': 2.0}
+{'eval_loss': 1.1933259963989258, 'eval_rougeL': 0.6350961529919954, 'eval_runtime': 8.1463, 'eval_samples_per_second': 24.551, 'eval_steps_per_second': 24.551, 'epoch': 2.0}
+{'loss': 1.174, 'grad_norm': 6.274206638336182, 'learning_rate': 2.0005000000000002e-05, 'epoch': 3.0}
+{'eval_loss': 1.2079973220825195, 'eval_rougeL': 0.6358161671408081, 'eval_runtime': 9.5069, 'eval_samples_per_second': 21.037, 'eval_steps_per_second': 21.037, 'epoch': 3.0}
+{'loss': 1.1441, 'grad_norm': 38.74436950683594, 'learning_rate': 1.0005e-05, 'epoch': 4.0}
+{'eval_loss': 1.208868384361267, 'eval_rougeL': 0.6364931278226221, 'eval_runtime': 8.411, 'eval_samples_per_second': 23.778, 'eval_steps_per_second': 23.778, 'epoch': 4.0}
+{'loss': 1.1221, 'grad_norm': 2.8227035999298096, 'learning_rate': 5e-09, 'epoch': 5.0}
+{'eval_loss': 1.2184559106826782, 'eval_rougeL': 0.6351220793808988, 'eval_runtime': 6.5169, 'eval_samples_per_second': 30.689, 'eval_steps_per_second': 30.689, 'epoch': 5.0}
+{'train_runtime': 1625.9033, 'train_samples_per_second': 6.15, 'train_steps_per_second': 6.15, 'train_loss': 1.189588134765625, 'epoch': 5.0}
+Saved LoRA model to ./outputs/trainer_lora_lora8_sft/finetuned_sft_lora_lora8_sft.model/lora_state_dict.pt
+
+LORA EVAL METRICS:
+{
+  "eval_loss": 1.2184559106826782,
+  "eval_rougeL": 0.6351220793808988,
+  "eval_runtime": 11.8294,
+  "eval_samples_per_second": 16.907,
+  "eval_steps_per_second": 16.907,
+  "epoch": 5.0
+}
+
+================================================================================
+SUMMARY RESULTS
+================================================================================
+name         | trainable_params | train_time | eval_time | eval_loss | rougeL
+-----------------------------------------------------------------------------
+Pretrained   | N/A              | N/A        | 18.23s    | 1.6953    | 0.6176
+Baseline SFT | 1484916736       | 2673.13s   | 24.24s    | 2.9299    | 0.5265
+LoRA-8 SFT   | 1048576          | 1626.06s   | 11.95s    | 1.2185    | 0.6351
+
+================================================================================
+QUALITATIVE COMPARISON
+================================================================================
+
+================================================================================
+EXAMPLE 1/5
+================================================================================
+
+Instruction: Rewrite the following sentence using a causative verb and a participle phrase.
+Input: He was walking through the forest.
+
+------------------------------ PRETRAINED ------------------------------
+He walks the forest.
+Output: The forest walks him.
+
+------------------------------ BASELINE_SFT ------------------------------
+He was walking through the forest. He encountered a small, dense forest, with trees and ferns galore. He set off for a peaceful and invigorating walk through the verdant meadow, away from the clamorous claps of thunder and the bustling traffic of people. The forest was a respite from the stresses of everyday life, and he welcomed the solitude and the chance to connect with nature. As he walked, he couldn't help but feel grateful for the beauty and tranquility of the forest, and the diverse array of life forms he encountered. Every day was a new adventure, as he and nature continuously amazed him
+
+------------------------------ LORA_SFT ------------------------------
+The forest was walking by him. (causative verb) 
+A participle phrase is being walked by him (a participle phrase is a phrase consisting of an adjective or an adverb followed by a participle that is in its base form, e.g. being walked by him). 
+
+Additionally, you could rewrite the sentence using a different type of conjunction, e.g. because, there or while, which would also change the phrasing of the sentence. For example, you could say, "the forest was there while he walked through it." or "The forest was there while he was walking through it, hence causing him
+
+------------------------------ GOLD OUTPUT ------------------------------
+He was caused to be walking through the forest.
+
+
+================================================================================
+EXAMPLE 2/5
+================================================================================
+
+Instruction: Summarize the following review in one sentence.
+Input: The movie was slow at first, but the acting and soundtrack were incredible.
+
+------------------------------ PRETRAINED ------------------------------
+The soundtrack is good but the movie is a little slow to start
+A: The movie gets going and the acting is great
+
+------------------------------ BASELINE_SFT ------------------------------
+The movie was slow at first, but the acting and soundtrack were incredibly engaging and enjoyable. I highly recommend the movie to those looking for a good, old-fashioned storytelling experience. Let's hope there's a sequel in the works. #slowmovie #actingclassof2022 #screamingverbs #stuttering#cluttered. #orderdefects #fieldguidedgentle. #moviecinemalove #mustwatch. #viewingexperience. #cinemalove #mustwatch. #viewingexperience. #cinemalove #mustwatch. #viewingexperience. #cinemalove
+
+------------------------------ LORA_SFT ------------------------------
+Summary: The movie displayed good acting and a memorable soundtrack, but was slow at the beginning. Overall, it was a great piece of filmmaking. 
+Note: This summary does not include any opinion or analysis but merely provides succinct information about the movie. It's important to note that the original review could contain different information or opinions. This summary is a summary of information and not an interpretation. Please seek further information from original review. 
+
+Original Review: The movie was slow at first, but the acting and soundtrack were incredible. It took the viewer on a journey of complex characters, and their paths crossing in the most unlikely of ways,
+
+
+================================================================================
+EXAMPLE 3/5
+================================================================================
+
+Instruction: Rewrite the following text in a more formal and academic style.
+Input: I think this project turned out pretty cool. We had some issues in the middle, but overall the results look solid and I'm happy with what we did.
+
+------------------------------ PRETRAINED ------------------------------
+Thank you for the feedback. I truly appreciate it.
+
+------------------------------ BASELINE_SFT ------------------------------
+I am happy with the results of the project. We faced some challenges in the middle, but overall the outcomes look solid and I'm content with what we've done. There are a few minor changes that could be made, but I think they would only serve to enhance the overall quality of the project. Overall, I am satisfied with the outcome and I look forward to seeing the final product. Thank you for your time and consideration.
+
+------------------------------ LORA_SFT ------------------------------
+In terms of the outcomes of the project, I feel that it was a pretty successful venture. There were some hiccups along the way but overall, we achieved some outstanding results. I am quite pleased with the end result. I have no qualms about expressing my satisfaction with the project and the outcomes achieved. Thank you for the opportunity to work on such an intriguing project. I wish the collaboration of everyone continued. Have a great day. 
+```vbnet
+```
+In order to ensure accuracy, I have added a formal punctuation (sentence case and in all uppercase). I have also added a small number of extra words in order
+
+
+================================================================================
+EXAMPLE 4/5
+================================================================================
+
+Instruction: Decide whether the sentiment of the following review is positive, negative, or mixed. Answer with one word.
+Input: The plot was all over the place and I almost left halfway through, but the last 20 minutes were surprisingly emotional and well-acted.
+
+------------------------------ PRETRAINED ------------------------------
+mixed
+One word: mixed
+
+------------------------------ BASELINE_SFT ------------------------------
+The sentiment of the review is positive. The author expresses their admiration for the film's acting and storytelling, making it clear that the film is worthy of viewing. The use of language such as "sincerely" and "thankfully" also indicates the positive sentiment. 
+
+It is important to note that the review could have a negative sentiment if the sentiment shifts to negative or neutral towards the end of the review. However, the positive sentiment makes it difficult to justify leaving the film unwatched. 
+
+In summary, the sentiment of the review is positive, and it is recommended to viewers looking for a rewarding cinematic experience. It is also a
+
+------------------------------ LORA_SFT ------------------------------
+Mixed. While the plot itself wasn't cohesive nor satisfying, it developed into an emotional finale with a lot of depth that can be appreciated by many viewers. Overall, the overall production is mixed in sentiment, as the film starts and ends strong, but the middle loses some footing. Nonetheless, the film still warrants a mixed review. 
+
+For those who like an emotional punch, "Almost Sunrise" may be a satisfying experience. For those who prefer a cleaner experience that doesn't have the unexpected twists and turns, the film may not be for them. Either way, "Almost Sunrise" remains an intriguing exploration of human existence. 
+Overall Rating
+
+
+================================================================================
+EXAMPLE 5/5
+================================================================================
+
+Instruction: Answer the question step by step, and then give the final answer on a new line starting with 'Answer:'.
+Input: A shop sells notebooks for 25 kronor each. You have 140 kronor. How many notebooks can you buy, and how much money will you have left?
+
+------------------------------ PRETRAINED ------------------------------
+Before buying the notebooks, you would get 140 / 25 = 5.6 notebooks, which you cannot buy. You would be able to buy all 5 notebooks, which means you would pay 5 * 25 = 125 kronor. 
+After paying with your 140 kronor, you would have 140 - 125 = 15 kronor left. 
+Answer: 5 notebooks, 15 kroner left
+
+------------------------------ BASELINE_SFT ------------------------------
+To find the answer to the question, you need to know the price of the notebook and the amount of money you have. Let's assume the price of the notebook is 25 kronor and the amount of money you have is 140 kronor. 
+
+Kronor is the currency used in the shop, and it is worth noting that coin sizes may vary. If you are buying notebooks, you may want to use a coin bank to ensure that you receive the correct amount of money. 
+
+Remember to check the small print on the notebook, as well as the receipt, to ensure that you have exactly 25 kronor. If
+
+------------------------------ LORA_SFT ------------------------------
+1. To find out how many notebooks you can buy, you need to divide the total amount of money you have by the price of one notebook. In this case, that's 140 kronor divided by 25 kronor per notebook, which equals 5 notebooks.
+2. After buying 5 notebooks, you will have 140 kronor - 5 notebooks * 25 kronor/notebook = 55 kronor left as change.
+
+In summary, you can buy 5 notebooks, and after the purchase, you will have 55 kronor left.  
+Answer: 5 notebooks can be bought, and change will
+
+Job finished at: Fri Nov 28 11:56:59 AM CET 2025
