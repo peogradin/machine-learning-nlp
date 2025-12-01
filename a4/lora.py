@@ -1,4 +1,6 @@
-# %%
+###
+### Group 5: Jan Marten Winkler, Per-Ola Gradin, Pontus Granli Holmberg
+###
 # %%
 import os
 import time
@@ -61,19 +63,6 @@ class LoRA(nn.Module):
         pretrained_out = self.pretrained(x)
         lora_out = self.B(self.A(x)) * self.scaling
         return pretrained_out + lora_out
-
-# in_features = 768
-# out_features = 512
-# rank = 6
-# alpha = 12
-# pretrained_test = nn.Linear(in_features, out_features)
-# lora_test = LoRA(pretrained_test, rank, alpha)
-# print("A and B:\n", lora_test.A, lora_test.B)
-# test_tensor = torch.ones(in_features)
-# out = pretrained_test(test_tensor)
-# lora_out = lora_test(test_tensor)
-# print("output:\n", out)
-# print("lora output:\n", lora_out)
 # %%
 def extract_lora_targets(model):
     """
@@ -96,15 +85,6 @@ def extract_lora_targets(model):
             if 'q_proj' in name or 'k_proj' in name or 'v_proj' in name or 'o_proj' in name:
                 submodules[name] = l
     return submodules
-
-# %%
-DEFAULT_MODEL_NAME_OR_PATH = "/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B"
-model = pretrained_model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL_NAME_OR_PATH)
-
-extract_lora_targets(model)
-
-# %%
-
 
 def replace_layers(model, named_layers):
     """

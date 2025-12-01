@@ -1,3 +1,7 @@
+###
+### Group 5: Jan Marten Winkler, Per-Ola Gradin, Pontus Granli Holmberg
+###
+
 # %%
 import copy
 
@@ -159,74 +163,3 @@ def create_data_collator(tokenizer):
 
     return data_collator
 
-
-# # %%
-# Example usage and test cases
-
-
-# PROMPT_NO_INPUT = """
-# Below is an instruction that describes a task. 
-# Write a response that appropriately completes the request.
-
-# ### Instruction:
-# {instruction}
-
-# ### Response:
-# """.strip()
-
-# PROMPT_WITH_INPUT = """
-# Below is an instruction that describes a task, paired with an input that provides further context. 
-# Write a response that appropriately completes the request.
-
-# ### Instruction:
-# {instruction}
-
-# ### Input:
-# {input}
-
-# ### Response:
-# """.strip()
-
-# ds = [
-#     {
-#         "instruction": "Translate the following English text to French.",
-#         "input": "Hello, how are you?",
-#         "output": "Bonjour, comment ça va?"
-#     },
-#     {
-#         "instruction": "Summarize the following text.",
-#         "input": "",
-#         "output": "This is a summary."
-#     }
-# ]
-
-# ds_sft = map(lambda x: build_prompt(x, PROMPT_NO_INPUT, PROMPT_WITH_INPUT), ds)
-
-# list(ds_sft) 
-
-
-# DEFAULT_MODEL_NAME_OR_PATH = "/data/courses/2025_dat450_dit247/models/OLMo-2-0425-1B"
-
-# tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL_NAME_OR_PATH)
-# if tokenizer.pad_token is None:
-#     tokenizer.pad_token = tokenizer.eos_token or tokenizer.unk_token
-
-# # %%
-
-# batch = tokenize_helper(
-#     {
-#         "prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nTranslate the following English text to French.\n\n### Response:\n",
-#         "answer": "Bonjour, comment ça va?"
-#     },
-#     tokenizer,
-#     max_length=20,
-# )
-# batch
-# # %%
-# collator = create_data_collator(tokenizer)
-# batch_collated = collator([batch, batch])
-
-# batch_collated
-
-# print(batch_collated["input_ids"].shape)
-# # %%
