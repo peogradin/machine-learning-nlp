@@ -1,4 +1,9 @@
 # %%
+import os
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import pandas as pd
 from transformers import pipeline
@@ -21,13 +26,9 @@ questions.iloc[0].question
 # %%
 documents.iloc[0].abstract
 # %%
-
-import os
-os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
-
 pipe = pipeline("text-generation", model="HuggingFaceTB/SmolLM2-1.7B-Instruct")
 messages = [
-    {"role": "user", "content": "Who are you?"},
+    {"role": "user", "content": "What is the capital of France?"},
 ]
 pipe(messages)
 # %%
@@ -41,5 +42,28 @@ metadatas = [{"id": idx} for idx in documents.index]
 texts = text_splitter.create_documents(texts=documents.abstract.tolist(), metadatas=metadatas)
 
 splits = text_splitter.split_documents(texts)
+
+# %%
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+embeddings.embed_query("Hello world").shape
+# %%
+
+# Initialize the Vector Store
+vector_store = Chroma(
+    collection_name="assignment5",
+    embedding_function=embeddings,
+    persist_directory="./chroma_db"
+)
+
+# Add splits
+document_ids = vector_store.add_documents(documents=splits[:50])
+
+print(f"Success! Added {len(document_ids)} chunks using Gemini Embeddings.")
+
+results = vector_store.similarity_search_with_score(
+    "What is programmed cell death?", k=3
+)
+for res, score in results:
+    print(f"* [SIM={score:3f}] {res.page_content} [{res.metadata}]")
 
 # %%
