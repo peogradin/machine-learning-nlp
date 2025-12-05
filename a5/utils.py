@@ -12,6 +12,8 @@ class RetrieveDocumentsMiddleware(AgentMiddleware[State]):
 
     def __init__(self, vector_store):
         self.vector_store = vector_store
+        self.last_doc_ids: list[int] | None = None
+        self.last_docs: list[Document] | None = None
 
     def before_model(self, state: AgentState) -> dict[str, Any] | None:
         last_message = state["messages"][-1] # get the user input query
@@ -25,6 +27,9 @@ class RetrieveDocumentsMiddleware(AgentMiddleware[State]):
                 unique[doc_id] = doc
         unique_docs = list(unique.values())
         docs_content = "\n\n".join(doc.page_content for doc in unique_docs)
+
+        self.last_doc_ids = [doc.metadata.get("id") for doc in unique_docs]
+        self.last_docs = unique_docs
 
         augmented_message_content = (
             f"question:\n"
