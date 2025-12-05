@@ -3,12 +3,15 @@ import os
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFacePipeline
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import pandas as pd
 from transformers import pipeline
-from langchain_huggingface.llms import HuggingFacePipeline
-from utils import State, RetrieveDocumentsMiddleware
+from typing import Any
+from langchain_core.documents import Document
+from langchain.agents.middleware import AgentMiddleware, AgentState
+from langchain.agents import create_agent
+
 
 # %%
 tmp_data = pd.read_json("ori_pqal.json").T
@@ -28,17 +31,18 @@ questions.iloc[0].question
 # %%
 documents.iloc[0].abstract
 # %%
-# pipe = pipeline("text-generation", model="HuggingFaceTB/SmolLM2-1.7B-Instruct")
+model_id = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+print(f"Loading model {model_id}...")
 
-model_id = "meta-llama/Llama-3.2-3B-Instruct"
-pipe = HuggingFacePipeline.from_model_id(
-    model_id=model_id,
+model = HuggingFacePipeline.from_model_id(
+    model_id,
     task="text-generation",
-    pipeline_kwargs={
-        "max_new_tokens": 10,
-        "return_full_text": False
-    }
+    pipeline_kwargs={"return_full_text": False},
 )
+prompt = "What is the capital of France?"
+print("Prompt:", prompt)
+answer = model.invoke(prompt)
+print("Answer:", answer)
 
 # %%
 text_splitter = RecursiveCharacterTextSplitter(
@@ -67,7 +71,7 @@ vector_store = Chroma(
 # Add splits
 document_ids = vector_store.add_documents(documents=splits[:50])
 
-print(f"Success! Added {len(document_ids)} chunks using Gemini Embeddings.")
+print(f"Success! Added {len(document_ids)} chunks")
 
 results = vector_store.similarity_search_with_score(
     "What is programmed cell death?", k=3
@@ -77,3 +81,40 @@ for res, score in results:
 
 # %%
 
+class State(AgentState):
+    context: list[Document]
+
+
+class RetrieveDocumentsMiddleware(AgentMiddleware[State]):
+    state_schema = State
+
+    def before_model(self, state: AgentState) -> dict[str, Any] | None:
+        last_message = state["messages"][-1]
+        retrieved_docs = vector_store.similarity_search(last_message.text)
+
+        docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
+
+        augmented_message_content = (
+            f"{last_message.text}\n\n"
+            "Use the following context to answer the query. Only answer with yes or no!\n"
+            f"{docs_content}"
+            "\n\n Answer (yes/no):"
+        )
+        return {
+            "messages": [last_message.model_copy(update={"content": augmented_message_content})],
+            "context": retrieved_docs,
+        }
+
+agent = create_agent(
+    model,
+    tools=[],
+    middleware=[RetrieveDocumentsMiddleware()],
+)
+# %%
+for step in agent.stream(
+    {"messages": [{"role": "user", "content": "Is programmed cell death the regulated death of cells?" }]},
+    stream_mode="values",
+):
+    step["messages"][-1].pretty_print()
+
+# %%
