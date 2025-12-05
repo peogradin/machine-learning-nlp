@@ -31,8 +31,23 @@ questions.iloc[0].question
 # %%
 documents.iloc[0].abstract
 # %%
-model_id = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
-print(f"Loading model {model_id}...")
+# Uncomment to use Llama
+# print("Current working directory:", os.getcwd())
+# with open("./.secrets/DAT450-token.txt", "r") as token_file:
+#     hf_token = token_file.read().strip()
+# os.environ["HF_TOKEN"] = hf_token
+# f_token = os.getenv("HF_TOKEN")
+
+# print("HuggingFace token loaded successfully.")
+
+# from huggingface_hub import login
+
+# login(token=hf_token)
+
+# model_id = "meta-llama/Llama-3.2-3B-Instruct"
+# print(f"Loading model {model_id}...")
+
+model_id = "Qwen/Qwen2.5-3B"
 
 model = HuggingFacePipeline.from_model_id(
     model_id,
@@ -80,35 +95,20 @@ for res, score in results:
     print(f"* [SIM={score:3f}] {res.page_content} [{res.metadata}]")
 
 # %%
+# Reload utils if already loaded, then rebind names
+import importlib, sys
 
-class State(AgentState):
-    context: list[Document]
+if "utils" in sys.modules:
+    importlib.reload(sys.modules["utils"])
+else:
+    import utils
 
-
-class RetrieveDocumentsMiddleware(AgentMiddleware[State]):
-    state_schema = State
-
-    def before_model(self, state: AgentState) -> dict[str, Any] | None:
-        last_message = state["messages"][-1]
-        retrieved_docs = vector_store.similarity_search(last_message.text)
-
-        docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
-
-        augmented_message_content = (
-            f"{last_message.text}\n\n"
-            "Use the following context to answer the query. Only answer with yes or no!\n"
-            f"{docs_content}"
-            "\n\n Answer (yes/no):"
-        )
-        return {
-            "messages": [last_message.model_copy(update={"content": augmented_message_content})],
-            "context": retrieved_docs,
-        }
+from utils import State, RetrieveDocumentsMiddleware
 
 agent = create_agent(
     model,
     tools=[],
-    middleware=[RetrieveDocumentsMiddleware()],
+    middleware=[RetrieveDocumentsMiddleware(vector_store=vector_store)],
 )
 # %%
 for step in agent.stream(
@@ -116,5 +116,54 @@ for step in agent.stream(
     stream_mode="values",
 ):
     step["messages"][-1].pretty_print()
+
+# %%
+def extract_yes_no(raw: str) -> str | None:
+    text = raw.strip().lower()
+    print("Text:\n", text)
+    if not text:
+        return None
+    first = text.split()[0]
+    print("First:\n", first)
+    if first.startswith("yes"):
+        return "yes"
+    if first.startswith("no"):
+        return "no"
+    return None
+
+def rag_answer(question: str):
+    res = agent.invoke({"messages": [{"role": "user", "content": question}]})
+    answer_msg = res["messages"][-1]
+    answer_text = answer_msg.content
+    pred = extract_yes_no(answer_text)
+    return pred, answer_text
+
+# %%
+
+from sklearn.metrics import accuracy_score, f1_score
+
+gold = []
+preds = []
+
+for n, (i, row) in enumerate(questions.iterrows()):
+    q = row["question"]
+    gold_label = row["gold_label"]  # "yes"/"no"
+
+    pred, raw_answer = rag_answer(q)
+    if pred is None:
+        continue
+
+    gold.append(gold_label)
+    preds.append(pred)
+    if n >= 10:
+        break
+
+acc = accuracy_score(gold, preds)
+f1 = f1_score(gold, preds, pos_label="yes")
+
+print("RAG with context:")
+print("  #valid:", len(gold))
+print("  accuracy:", acc)
+print("  F1:", f1)
 
 # %%
