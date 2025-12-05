@@ -7,6 +7,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import pandas as pd
 from transformers import pipeline
+from langchain_huggingface.llms import HuggingFacePipeline
+from utils import State, RetrieveDocumentsMiddleware
 
 # %%
 tmp_data = pd.read_json("ori_pqal.json").T
@@ -26,11 +28,18 @@ questions.iloc[0].question
 # %%
 documents.iloc[0].abstract
 # %%
-pipe = pipeline("text-generation", model="HuggingFaceTB/SmolLM2-1.7B-Instruct")
-messages = [
-    {"role": "user", "content": "What is the capital of France?"},
-]
-pipe(messages)
+# pipe = pipeline("text-generation", model="HuggingFaceTB/SmolLM2-1.7B-Instruct")
+
+model_id = "meta-llama/Llama-3.2-3B-Instruct"
+pipe = HuggingFacePipeline.from_model_id(
+    model_id=model_id,
+    task="text-generation",
+    pipeline_kwargs={
+        "max_new_tokens": 10,
+        "return_full_text": False
+    }
+)
+
 # %%
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,  # chunk size (characters)
@@ -45,7 +54,7 @@ splits = text_splitter.split_documents(texts)
 
 # %%
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-embeddings.embed_query("Hello world").shape
+len(embeddings.embed_query("Hello world"))
 # %%
 
 # Initialize the Vector Store
@@ -67,3 +76,4 @@ for res, score in results:
     print(f"* [SIM={score:3f}] {res.page_content} [{res.metadata}]")
 
 # %%
+

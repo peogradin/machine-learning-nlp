@@ -218,3 +218,4 @@ a3/tmp_output.md
 
 # Secrets
 .secrets/
+chroma_db/
