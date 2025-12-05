@@ -31,11 +31,19 @@ questions.iloc[0].question
 # %%
 documents.iloc[0].abstract
 # %%
-pipe = pipeline("text-generation", model="HuggingFaceTB/SmolLM2-1.7B-Instruct")
-messages = [
-    {"role": "user", "content": "What is the capital of France?"},
-]
-pipe(messages)
+model_id = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+print(f"Loading model {model_id}...")
+
+model = HuggingFacePipeline.from_model_id(
+    model_id,
+    task="text-generation",
+    pipeline_kwargs={"return_full_text": False},
+)
+prompt = "What is the capital of France?"
+print("Prompt:", prompt)
+answer = model.invoke(prompt)
+print("Answer:", answer)
+
 # %%
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,  # chunk size (characters)
@@ -97,7 +105,6 @@ class RetrieveDocumentsMiddleware(AgentMiddleware[State]):
             "context": retrieved_docs,
         }
 
-model = HuggingFacePipeline(pipeline=pipe)
 agent = create_agent(
     model,
     tools=[],
