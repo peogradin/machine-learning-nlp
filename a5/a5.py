@@ -3,10 +3,15 @@ import os
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFacePipeline
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import pandas as pd
 from transformers import pipeline
+from typing import Any
+from langchain_core.documents import Document
+from langchain.agents.middleware import AgentMiddleware, AgentState
+from langchain.agents import create_agent
+
 
 # %%
 tmp_data = pd.read_json("ori_pqal.json").T
@@ -45,7 +50,7 @@ splits = text_splitter.split_documents(texts)
 
 # %%
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-embeddings.embed_query("Hello world").shape
+len(embeddings.embed_query("Hello world"))
 # %%
 
 # Initialize the Vector Store
@@ -58,12 +63,51 @@ vector_store = Chroma(
 # Add splits
 document_ids = vector_store.add_documents(documents=splits[:50])
 
-print(f"Success! Added {len(document_ids)} chunks using Gemini Embeddings.")
+print(f"Success! Added {len(document_ids)} chunks")
 
 results = vector_store.similarity_search_with_score(
     "What is programmed cell death?", k=3
 )
 for res, score in results:
     print(f"* [SIM={score:3f}] {res.page_content} [{res.metadata}]")
+
+# %%
+
+class State(AgentState):
+    context: list[Document]
+
+
+class RetrieveDocumentsMiddleware(AgentMiddleware[State]):
+    state_schema = State
+
+    def before_model(self, state: AgentState) -> dict[str, Any] | None:
+        last_message = state["messages"][-1]
+        retrieved_docs = vector_store.similarity_search(last_message.text)
+
+        docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
+
+        augmented_message_content = (
+            f"{last_message.text}\n\n"
+            "Use the following context to answer the query. Only answer with yes or no!\n"
+            f"{docs_content}"
+            "\n\n Answer (yes/no):"
+        )
+        return {
+            "messages": [last_message.model_copy(update={"content": augmented_message_content})],
+            "context": retrieved_docs,
+        }
+
+model = HuggingFacePipeline(pipeline=pipe)
+agent = create_agent(
+    model,
+    tools=[],
+    middleware=[RetrieveDocumentsMiddleware()],
+)
+# %%
+for step in agent.stream(
+    {"messages": [{"role": "user", "content": "Is programmed cell death the regulated death of cells?" }]},
+    stream_mode="values",
+):
+    step["messages"][-1].pretty_print()
 
 # %%
