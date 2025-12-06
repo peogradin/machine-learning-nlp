@@ -59,6 +59,16 @@ def load_model(model_id):
         task="text-generation",
         pipeline_kwargs={"return_full_text": False},
     )
+
+    # Försök lista ut device från den underliggande HF-pipelinen
+    hf_pipe = getattr(model, "pipeline", None)
+    device = None
+    if hf_pipe is not None and hasattr(hf_pipe, "model"):
+        device = getattr(hf_pipe.model, "device", None)
+        
+    print(f"Model id: {model_id}")
+    print(f"Device: {device}")
+
     prompt = "What is the capital of France?"
     print("Example prompt:\n", prompt)
     answer = model.invoke(prompt)
@@ -170,8 +180,8 @@ def evaluate_rag(agent, middleware, questions, documents, num_examples = 3):
     example_count = 0
 
     for n, (i, row) in enumerate(questions.iterrows()):
-        if n >= 10:
-            break
+        # if n >= 10:
+        #     break
         q = row["question"]
         gold_label = row["gold_label"]  # "yes"/"no"
         gold_doc_id = row["gold_document_id"]
