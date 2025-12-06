@@ -26,7 +26,7 @@ def load_data():
                 "gold_label": tmp_data.final_decision,
                 "gold_context": tmp_data.LONG_ANSWER,
                 "gold_document_id": documents.index})
-    
+    print("Dataset length: ", len(questions))
     print("Example question:")
     print(questions.iloc[0].question)
     print("\nExample document abstract:")
@@ -65,7 +65,7 @@ def load_model(model_id):
     device = None
     if hf_pipe is not None and hasattr(hf_pipe, "model"):
         device = getattr(hf_pipe.model, "device", None)
-        
+
     print(f"Model id: {model_id}")
     print(f"Device: {device}")
 
@@ -104,7 +104,7 @@ def build_vector_store(documents):
     print(f"Success! Added {len(document_ids)} chunks")
     print("\nTesting similarity search on 'What is programmed cell death?':")
     results = vector_store.similarity_search_with_score(
-        "What is programmed cell death?", k=3
+        "What is programmed cell death?", k=1
     )
     for res, score in results:
         print(f"* [SIM={score:3f}] {res.page_content} [{res.metadata}]")
@@ -233,7 +233,7 @@ def evaluate_lm_only(model, questions):
     gold = []
     preds = []
 
-    print("=== Baseline LM-only evaluation (no context) ===")
+    print("\n=== Baseline LM-only evaluation (no context) ===")
 
     for i, (_, row) in enumerate(questions.iterrows()):
         q = row["question"]
@@ -245,10 +245,9 @@ def evaluate_lm_only(model, questions):
 
         gold.append(gold_label)
         preds.append(pred)
-
+        print("\nExamples:\n")
         if i < 3:
-            print("=== Example LM-only QA ===")
-            print("Question:", q)
+            print("\nQuestion:", q)
             print("Gold label:", gold_label)
             print("Model raw answers", raw_answer)
             print("Parsed prediction", pred)
@@ -256,7 +255,7 @@ def evaluate_lm_only(model, questions):
     acc = accuracy_score(gold, preds)
     f1 = f1_score(gold, preds, pos_label="yes")
 
-    print("\nLM only (no context)")
+    print("\nLM only (no context) results:")
     print("  Valid predictions:", len(gold))
     print("  Accuracy:", acc)
     print("  F1:", f1)
@@ -264,7 +263,16 @@ def evaluate_lm_only(model, questions):
 # %%
 
 def main():
-    model_id = "Qwen/Qwen2.5-3B"
+    # model_id = "Qwen/Qwen2.5-7B"
+    with open("./.secrets/DAT450-token.txt", "r") as token_file:
+        hf_token = token_file.read().strip()
+    os.environ["HF_TOKEN"] = hf_token
+    f_token = os.getenv("HF_TOKEN")
+    print("HuggingFace token loaded successfully.")
+    from huggingface_hub import login
+    login(token=hf_token)
+
+    model_id = "meta-llama/Llama-3.2-3B-Instruct"
     documents, questions = load_data()
     model = load_model(model_id)
     vector_store = build_vector_store(documents)

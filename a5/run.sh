@@ -18,4 +18,4 @@ echo "GPU: $CUDA_VISIBLE_DEVICES"
 source /data/courses/2025_dat450_dit247/venvs/dat450_venv/bin/activate
 python3 -u a5.py
 
-echo "Job finished at: $(date)"
+echo "\nJob finished at: $(date)"
