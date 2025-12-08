@@ -34,24 +34,6 @@ def load_data():
 
     return documents, questions
 
-# %%
-# Uncomment to use Llama
-# print("Current working directory:", os.getcwd())
-# with open("./.secrets/DAT450-token.txt", "r") as token_file:
-#     hf_token = token_file.read().strip()
-# os.environ["HF_TOKEN"] = hf_token
-# f_token = os.getenv("HF_TOKEN")
-
-# print("HuggingFace token loaded successfully.")
-
-# from huggingface_hub import login
-
-# login(token=hf_token)
-
-# model_id = "meta-llama/Llama-3.2-3B-Instruct"
-# print(f"Loading model {model_id}...")
-# model_id = "Qwen/Qwen2.5-3B"
-
 def load_model(model_id):
     print("\n=== Loading model ===")
     model = HuggingFacePipeline.from_model_id(
@@ -60,7 +42,6 @@ def load_model(model_id):
         pipeline_kwargs={"return_full_text": False},
     )
 
-    # Försök lista ut device från den underliggande HF-pipelinen
     hf_pipe = getattr(model, "pipeline", None)
     device = None
     if hf_pipe is not None and hasattr(hf_pipe, "model"):
@@ -180,8 +161,6 @@ def evaluate_rag(agent, middleware, questions, documents, num_examples = 3):
     example_count = 0
 
     for n, (i, row) in enumerate(questions.iterrows()):
-        # if n >= 10:
-        #     break
         q = row["question"]
         gold_label = row["gold_label"]  # "yes"/"no"
         gold_doc_id = row["gold_document_id"]
@@ -263,7 +242,6 @@ def evaluate_lm_only(model, questions):
 # %%
 
 def main():
-    # model_id = "Qwen/Qwen2.5-7B"
     with open("./.secrets/DAT450-token.txt", "r") as token_file:
         hf_token = token_file.read().strip()
     os.environ["HF_TOKEN"] = hf_token
