@@ -1,4 +1,7 @@
 # %%
+###
+### Group 5: Jan Marten Winkler, Per-Ola Gradin, Pontus Granli Holmberg
+###
 import os
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
