@@ -1,0 +1,28 @@
+/data/courses/2025_dat450_dit247/venvs/dat450_venv/bin/python3
+Job started at: Mon Dec 22 10:26:51 AM CET 2025
+Running on node: uranus
+Job ID: 115048
+GPU: 1
+
+============================== LOADED DATASET ==============================
+Fraction of training data:  0.1
+Train: 1600, Val: 2000, Test: 2000
+Loaded teacher and student models.
+{'loss': 1.1848, 'grad_norm': 3.016937255859375, 'learning_rate': 4.5010000000000004e-05, 'epoch': 0.5}
+{'loss': 0.4303, 'grad_norm': 4.638684272766113, 'learning_rate': 4.0010000000000005e-05, 'epoch': 1.0}
+{'eval_loss': 0.26285555958747864, 'eval_accuracy': 0.9325, 'eval_f1': 0.9332217560901277, 'eval_runtime': 2.2633, 'eval_samples_per_second': 883.657, 'eval_steps_per_second': 55.229, 'epoch': 1.0}
+{'loss': 0.2451, 'grad_norm': 1.66485595703125, 'learning_rate': 3.5010000000000005e-05, 'epoch': 1.5}
+{'loss': 0.2214, 'grad_norm': 15.69743824005127, 'learning_rate': 3.001e-05, 'epoch': 2.0}
+{'eval_loss': 0.24577322602272034, 'eval_accuracy': 0.937, 'eval_f1': 0.9364000865626654, 'eval_runtime': 2.3525, 'eval_samples_per_second': 850.162, 'eval_steps_per_second': 53.135, 'epoch': 2.0}
+{'loss': 0.1667, 'grad_norm': 0.7716503143310547, 'learning_rate': 2.501e-05, 'epoch': 2.5}
+{'loss': 0.153, 'grad_norm': 1.3150297403335571, 'learning_rate': 2.001e-05, 'epoch': 3.0}
+{'eval_loss': 0.21186460554599762, 'eval_accuracy': 0.941, 'eval_f1': 0.9411266904911092, 'eval_runtime': 2.2993, 'eval_samples_per_second': 869.841, 'eval_steps_per_second': 54.365, 'epoch': 3.0}
+{'loss': 0.1058, 'grad_norm': 3.901977062225342, 'learning_rate': 1.5010000000000002e-05, 'epoch': 3.5}
+{'loss': 0.0908, 'grad_norm': 0.7745594382286072, 'learning_rate': 1.001e-05, 'epoch': 4.0}
+{'eval_loss': 0.20875073969364166, 'eval_accuracy': 0.942, 'eval_f1': 0.941945418024342, 'eval_runtime': 2.3102, 'eval_samples_per_second': 865.716, 'eval_steps_per_second': 54.107, 'epoch': 4.0}
+{'loss': 0.055, 'grad_norm': 6.817336559295654, 'learning_rate': 5.01e-06, 'epoch': 4.5}
+{'loss': 0.0566, 'grad_norm': 0.1874265819787979, 'learning_rate': 1e-08, 'epoch': 5.0}
+{'eval_loss': 0.22213317453861237, 'eval_accuracy': 0.937, 'eval_f1': 0.9368893615208818, 'eval_runtime': 2.3016, 'eval_samples_per_second': 868.963, 'eval_steps_per_second': 54.31, 'epoch': 5.0}
+{'train_runtime': 154.0885, 'train_samples_per_second': 519.182, 'train_steps_per_second': 32.449, 'train_loss': 0.2709354721069336, 'epoch': 5.0}
+Distillation training completed. Evaluation metrics: {'eval_loss': 0.22213317453861237, 'eval_accuracy': 0.937, 'eval_f1': 0.9368893615208818, 'eval_runtime': 2.3283, 'eval_samples_per_second': 859.003, 'eval_steps_per_second': 53.688, 'epoch': 5.0}
+Job finished at: Mon Dec 22 10:29:41 AM CET 2025

@@ -1,0 +1,49 @@
+/data/courses/2025_dat450_dit247/venvs/dat450_venv/bin/python3
+Job started at: Sun Dec 21 07:27:25 PM CET 2025
+Running on node: neptune
+Job ID: 115026
+GPU: 0
+
+============================== LOADED DATASET ==============================
+Fraction of training data:  1.0
+Train: 16000, Val: 2000, Test: 2000
+
+============================== Training teacher model ==============================
+{'loss': 0.4686, 'grad_norm': 1.4551913738250732, 'learning_rate': 4.002e-05, 'epoch': 1.0}
+{'eval_loss': 0.1734079122543335, 'eval_accuracy': 0.9285, 'eval_f1': 0.9288750114862412, 'eval_runtime': 0.726, 'eval_samples_per_second': 2754.661, 'eval_steps_per_second': 86.772, 'epoch': 1.0}
+{'loss': 0.1297, 'grad_norm': 1.136437177658081, 'learning_rate': 3.0020000000000004e-05, 'epoch': 2.0}
+{'eval_loss': 0.1280634105205536, 'eval_accuracy': 0.9365, 'eval_f1': 0.935449183891581, 'eval_runtime': 0.676, 'eval_samples_per_second': 2958.596, 'eval_steps_per_second': 93.196, 'epoch': 2.0}
+{'loss': 0.0933, 'grad_norm': 3.096569061279297, 'learning_rate': 2.002e-05, 'epoch': 3.0}
+{'eval_loss': 0.13560988008975983, 'eval_accuracy': 0.942, 'eval_f1': 0.942543808361098, 'eval_runtime': 0.6802, 'eval_samples_per_second': 2940.133, 'eval_steps_per_second': 92.614, 'epoch': 3.0}
+{'loss': 0.0682, 'grad_norm': 6.929838180541992, 'learning_rate': 1.002e-05, 'epoch': 4.0}
+{'eval_loss': 0.16526639461517334, 'eval_accuracy': 0.9405, 'eval_f1': 0.9401556873393981, 'eval_runtime': 0.6836, 'eval_samples_per_second': 2925.735, 'eval_steps_per_second': 92.161, 'epoch': 4.0}
+{'loss': 0.0374, 'grad_norm': 3.9302515983581543, 'learning_rate': 2e-08, 'epoch': 5.0}
+{'eval_loss': 0.20552383363246918, 'eval_accuracy': 0.939, 'eval_f1': 0.9390072812771041, 'eval_runtime': 0.685, 'eval_samples_per_second': 2919.684, 'eval_steps_per_second': 91.97, 'epoch': 5.0}
+{'train_runtime': 96.4127, 'train_samples_per_second': 829.766, 'train_steps_per_second': 25.93, 'train_loss': 0.1594496368408203, 'epoch': 5.0}
+
+============================== Training student base model ==============================
+{'loss': 0.4228, 'grad_norm': 6.478586196899414, 'learning_rate': 4.002e-05, 'epoch': 1.0}
+{'eval_loss': 0.16207672655582428, 'eval_accuracy': 0.9315, 'eval_f1': 0.9320196138246373, 'eval_runtime': 0.4078, 'eval_samples_per_second': 4904.428, 'eval_steps_per_second': 154.489, 'epoch': 1.0}
+{'loss': 0.131, 'grad_norm': 21.761707305908203, 'learning_rate': 3.0020000000000004e-05, 'epoch': 2.0}
+{'eval_loss': 0.1575213074684143, 'eval_accuracy': 0.934, 'eval_f1': 0.9327114658949542, 'eval_runtime': 0.4057, 'eval_samples_per_second': 4929.833, 'eval_steps_per_second': 155.29, 'epoch': 2.0}
+{'loss': 0.0987, 'grad_norm': 3.045771837234497, 'learning_rate': 2.002e-05, 'epoch': 3.0}
+{'eval_loss': 0.14104770123958588, 'eval_accuracy': 0.9435, 'eval_f1': 0.9433946678735506, 'eval_runtime': 0.4082, 'eval_samples_per_second': 4900.148, 'eval_steps_per_second': 154.355, 'epoch': 3.0}
+{'loss': 0.0689, 'grad_norm': 9.49118709564209, 'learning_rate': 1.002e-05, 'epoch': 4.0}
+{'eval_loss': 0.15080617368221283, 'eval_accuracy': 0.947, 'eval_f1': 0.9467441550334493, 'eval_runtime': 0.4058, 'eval_samples_per_second': 4928.72, 'eval_steps_per_second': 155.255, 'epoch': 4.0}
+{'loss': 0.041, 'grad_norm': 0.9249776601791382, 'learning_rate': 2e-08, 'epoch': 5.0}
+{'eval_loss': 0.1857651025056839, 'eval_accuracy': 0.941, 'eval_f1': 0.9409279209675323, 'eval_runtime': 0.4052, 'eval_samples_per_second': 4935.468, 'eval_steps_per_second': 155.467, 'epoch': 5.0}
+{'train_runtime': 52.2026, 'train_samples_per_second': 1532.491, 'train_steps_per_second': 47.89, 'train_loss': 0.1524773063659668, 'epoch': 5.0}
+
+============================== Training BERT tiny student base model ==============================
+{'loss': 0.9199, 'grad_norm': 3.619858980178833, 'learning_rate': 4.002e-05, 'epoch': 1.0}
+{'eval_loss': 0.37802329659461975, 'eval_accuracy': 0.894, 'eval_f1': 0.8940839664126146, 'eval_runtime': 0.3358, 'eval_samples_per_second': 5955.086, 'eval_steps_per_second': 187.585, 'epoch': 1.0}
+{'loss': 0.3091, 'grad_norm': 8.824851989746094, 'learning_rate': 3.0020000000000004e-05, 'epoch': 2.0}
+{'eval_loss': 0.20981580018997192, 'eval_accuracy': 0.9225, 'eval_f1': 0.9230509442415198, 'eval_runtime': 0.3313, 'eval_samples_per_second': 6036.968, 'eval_steps_per_second': 190.164, 'epoch': 2.0}
+{'loss': 0.208, 'grad_norm': 6.095824718475342, 'learning_rate': 2.002e-05, 'epoch': 3.0}
+{'eval_loss': 0.1986522227525711, 'eval_accuracy': 0.9245, 'eval_f1': 0.9252175381214591, 'eval_runtime': 0.3353, 'eval_samples_per_second': 5964.13, 'eval_steps_per_second': 187.87, 'epoch': 3.0}
+{'loss': 0.1604, 'grad_norm': 20.592689514160156, 'learning_rate': 1.002e-05, 'epoch': 4.0}
+{'eval_loss': 0.18591655790805817, 'eval_accuracy': 0.931, 'eval_f1': 0.9310042082793393, 'eval_runtime': 0.3352, 'eval_samples_per_second': 5966.671, 'eval_steps_per_second': 187.95, 'epoch': 4.0}
+{'loss': 0.14, 'grad_norm': 10.636610984802246, 'learning_rate': 2e-08, 'epoch': 5.0}
+{'eval_loss': 0.1795380711555481, 'eval_accuracy': 0.9275, 'eval_f1': 0.9278118598855093, 'eval_runtime': 0.3305, 'eval_samples_per_second': 6051.151, 'eval_steps_per_second': 190.611, 'epoch': 5.0}
+{'train_runtime': 26.0112, 'train_samples_per_second': 3075.593, 'train_steps_per_second': 96.112, 'train_loss': 0.3474749298095703, 'epoch': 5.0}
+Job finished at: Sun Dec 21 07:31:25 PM CET 2025

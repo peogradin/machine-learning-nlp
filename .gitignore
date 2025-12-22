@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *.class
 
+project/outputs**
+project/teacher**
+
 # C extensions
 *.so
 

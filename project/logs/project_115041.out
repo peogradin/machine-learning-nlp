@@ -1,0 +1,31 @@
+/data/courses/2025_dat450_dit247/venvs/dat450_venv/bin/python3
+Job started at: Mon Dec 22 10:18:11 AM CET 2025
+Running on node: uranus
+Job ID: 115041
+GPU: 0
+
+============================== LOADED DATASET ==============================
+Fraction of training data:  0.1
+Train: 1600, Val: 2000, Test: 2000
+
+============================== Training teacher model ==============================
+{'loss': 0.4335, 'grad_norm': 5.5535664558410645, 'learning_rate': 2.5050000000000002e-05, 'epoch': 1.0}
+{'eval_loss': 0.16507965326309204, 'eval_accuracy': 0.929, 'eval_f1': 0.9292771482657061, 'eval_runtime': 0.8024, 'eval_samples_per_second': 2492.522, 'eval_steps_per_second': 78.514, 'epoch': 1.0}
+{'loss': 0.1152, 'grad_norm': 3.2295093536376953, 'learning_rate': 5.0000000000000004e-08, 'epoch': 2.0}
+{'eval_loss': 0.12221048027276993, 'eval_accuracy': 0.942, 'eval_f1': 0.9420282770549092, 'eval_runtime': 0.681, 'eval_samples_per_second': 2936.96, 'eval_steps_per_second': 92.514, 'epoch': 2.0}
+{'train_runtime': 41.53, 'train_samples_per_second': 770.528, 'train_steps_per_second': 24.079, 'train_loss': 0.2743143196105957, 'epoch': 2.0}
+
+============================== Training student base model ==============================
+{'loss': 0.4505, 'grad_norm': 1.7493497133255005, 'learning_rate': 2.5050000000000002e-05, 'epoch': 1.0}
+{'eval_loss': 0.187963604927063, 'eval_accuracy': 0.9285, 'eval_f1': 0.9289814858521258, 'eval_runtime': 0.4057, 'eval_samples_per_second': 4930.229, 'eval_steps_per_second': 155.302, 'epoch': 1.0}
+{'loss': 0.1283, 'grad_norm': 6.664267063140869, 'learning_rate': 5.0000000000000004e-08, 'epoch': 2.0}
+{'eval_loss': 0.1359250247478485, 'eval_accuracy': 0.943, 'eval_f1': 0.9427836876263538, 'eval_runtime': 0.4047, 'eval_samples_per_second': 4941.789, 'eval_steps_per_second': 155.666, 'epoch': 2.0}
+{'train_runtime': 22.3302, 'train_samples_per_second': 1433.037, 'train_steps_per_second': 44.782, 'train_loss': 0.28936669158935546, 'epoch': 2.0}
+
+============================== Training BERT tiny student base model ==============================
+{'loss': 1.0318, 'grad_norm': 6.39385461807251, 'learning_rate': 2.5050000000000002e-05, 'epoch': 1.0}
+{'eval_loss': 0.5019460916519165, 'eval_accuracy': 0.868, 'eval_f1': 0.8660720474918674, 'eval_runtime': 0.3349, 'eval_samples_per_second': 5971.322, 'eval_steps_per_second': 188.097, 'epoch': 1.0}
+{'loss': 0.4285, 'grad_norm': 8.43899917602539, 'learning_rate': 5.0000000000000004e-08, 'epoch': 2.0}
+{'eval_loss': 0.35022473335266113, 'eval_accuracy': 0.8975, 'eval_f1': 0.8973144122606606, 'eval_runtime': 0.3387, 'eval_samples_per_second': 5904.788, 'eval_steps_per_second': 186.001, 'epoch': 2.0}
+{'train_runtime': 10.5633, 'train_samples_per_second': 3029.35, 'train_steps_per_second': 94.667, 'train_loss': 0.7301103057861328, 'epoch': 2.0}
+Job finished at: Mon Dec 22 10:20:32 AM CET 2025
