@@ -41,8 +41,8 @@ def load_emotion_dataset(tokenizer, train_fraction: float = 1.0, seed: int = 1):
     if train_fraction < 1.0:
         train_size = int(train_fraction * dataset["train"].num_rows)
 
-        dataset["train"] = (
-            dataset["train"]
+        tokenized["train"] = (
+            tokenized["train"]
             .shuffle(seed=seed)
             .select(range(train_size))
         )
@@ -50,9 +50,9 @@ def load_emotion_dataset(tokenizer, train_fraction: float = 1.0, seed: int = 1):
     print("\n" + "=" * 30 + " LOADED DATASET " + "=" * 30)
     print("Fraction of training data: ", train_fraction)
     print(
-    f"Train: {dataset['train'].num_rows}, "
-    f"Val: {dataset['validation'].num_rows}, "
-    f"Test: {dataset['test'].num_rows}"
+    f"Train: {tokenized['train'].num_rows}, "
+    f"Val: {tokenized['validation'].num_rows}, "
+    f"Test: {tokenized['test'].num_rows}"
     )
     return tokenized
 
