@@ -70,7 +70,7 @@ if __name__ == "__main__":
         dataset=dataset,
         output_dir=args.output_dir + "/teacher_bert_base",
         epochs=args.num_epochs,
-        train_fraction=args.train_fraction,
+        train_fraction=1.0, # QUESTION: shouldn't we always train teacher on full data?
     )
 
     print("\n" + "=" * 30 + " Training student base model " + "=" * 30)

@@ -48,7 +48,8 @@ if  __name__ == "__main__":
 
 
     # load teacher from checkpoint
-    teacher = AutoModelForSequenceClassification.from_pretrained("teacher_bert_base", num_labels=6).to(args.device)
+    teacher_path = args.output_dir + "/teacher_bert_base"
+    teacher = AutoModelForSequenceClassification.from_pretrained(teacher_path, num_labels=6).to(args.device)
     # load student distillbert 
     print(f"Loading student model {student_name} for distillation...")
     student = AutoModelForSequenceClassification.from_pretrained(student_name, num_labels=teacher.config.num_labels).to(args.device)
