@@ -2,7 +2,10 @@
 #SBATCH --output=logs/project_%j.out
 #SBATCH --error=logs/project_%j.err
 #SBATCH --cpus-per-task=2
-#SBATCH --gres=gpu:L40s:1
+#SBATCH --gres=gpu:1 --exclude=callisto
+#SBATCH --job-name=train
+#SBATCH --time=01:50:00
+#SBATCH --partition=long
 
 mkdir -p logs
 set -euo pipefail
@@ -10,7 +13,7 @@ set -euo pipefail
 OUTPUT_DIR="./outputs"
 NUM_EPOCHS=20
 SEED=101
-TRAIN_FRACTION=0.5
+TRAIN_FRACTION=1.0
 DEVICE="cuda"
 
 TRAIN_ARGS=(
@@ -25,7 +28,7 @@ source /data/courses/2025_dat450_dit247/venvs/dat450_venv/bin/activate
 which python3
 
 run_training() {
-  python3 training.py "${TRAIN_ARGS[@]}" "$@"
+  python3 -u training.py "${TRAIN_ARGS[@]}" "$@"
 }
 
 echo "Job started at: $(date)"

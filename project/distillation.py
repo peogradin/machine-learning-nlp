@@ -1,10 +1,12 @@
+import os
+import json
 from transformers import TrainingArguments, Trainer, AutoModelForSequenceClassification, AutoTokenizer
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from datasets import load_dataset
-from utils import load_emotion_dataset, load_model, compute_metrics, parse_args
+from utils import compute_metrics, parse_args, get_run_id, load_saved_dataset
 
+teacher_name = "bert-base-uncased"
 student_name = "prajjwal1/bert-mini"
 
 class DistillTrainingArguments(TrainingArguments):
@@ -19,6 +21,8 @@ class DistillTrainer(Trainer):
         super().__init__(*args, **kwargs)
         self.teacher = teacher
         self.teacher.to(self.model.device)
+        for p in self.teacher.parameters():
+            p.requires_grad = False
         # freeze teacher weights
         self.teacher.eval()
  
@@ -41,14 +45,20 @@ class DistillTrainer(Trainer):
     
 if  __name__ == "__main__":
     args = parse_args()
+    with open(os.path.join(args.output_dir, get_run_id(args), "run_args.json"), "w") as f:
+        json.dump(vars(args), f, indent=2)
+    
     # tokenizer for both teacher and student
-    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+    tokenizer = AutoTokenizer.from_pretrained(student_name)
     # training dataset 
-    dataset = load_emotion_dataset(tokenizer, train_fraction=args.train_fraction, seed=args.seed)
-
+    # dataset = load_emotion_dataset(tokenizer, train_fraction=args.train_fraction, seed=args.seed)
+    run_id = get_run_id(args)
+    student_ds_path = os.path.join(args.output_dir, run_id, "student_dataset_bertmini")
+    dataset = load_saved_dataset(student_ds_path)
+    print(f"Loaded student dataset from: {student_ds_path}")
 
     # load teacher from checkpoint
-    teacher_path = args.output_dir + "/teacher_bert_base"
+    teacher_path = os.path.join(args.output_dir, run_id, "teacher_bert_base")
     teacher = AutoModelForSequenceClassification.from_pretrained(teacher_path, num_labels=6).to(args.device)
     # load student distillbert 
     print(f"Loading student model {student_name} for distillation...")
@@ -58,14 +68,19 @@ if  __name__ == "__main__":
 
     # define distillation training arguments
     training_args = DistillTrainingArguments(
-        output_dir= args.output_dir + "/distilled_model",
+        output_dir= os.path.join(args.output_dir, run_id, "distilled_model"),
         num_train_epochs=args.num_epochs,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         alpha=0.7,
         temperature=3.0,
         eval_strategy="epoch",
-        save_strategy="no",
+        logging_strategy="epoch", # log at each epoch
+        save_strategy="epoch", # save at each epoch
+        load_best_model_at_end=True, # load best model when finished training
+        metric_for_best_model="eval_accuracy", # use accuracy to evaluate best model
+        greater_is_better=True, # higher accuracy is better
+        save_total_limit=1,
         fp16=torch.cuda.is_available(),
         report_to="none",
     )
@@ -82,6 +97,17 @@ if  __name__ == "__main__":
     )
     # start distillation training
     trainer.train()
-    trainer.save_model(args.output_dir + "/distilled_model")
-    metrics = trainer.evaluate()
+    trainer.save_model(training_args.output_dir)
+
+    val_metrics = trainer.evaluate(eval_dataset=dataset["validation"])
+    test_metrics = trainer.evaluate(eval_dataset=dataset["test"])
+    metrics = {
+        "val": val_metrics,
+        "test": test_metrics,
+    }
+    with open(os.path.join(training_args.output_dir, "metrics.json"), "w") as f:
+        json.dump({"val": val_metrics, "test": test_metrics}, f, indent=2)
+
+    with open(os.path.join(training_args.output_dir, "log_history.json"), "w") as f:
+        json.dump(trainer.state.log_history, f, indent=2)
     print("Distillation training completed. Evaluation metrics:", metrics)

@@ -1,3 +1,4 @@
+import os
 import argparse
 import evaluate
 from datasets import load_dataset
@@ -19,6 +20,11 @@ def parse_args():
         "--device",
         default="cuda" if torch.cuda.is_available() else "cpu",
         help="Torch device to use (default auto-detect).",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional identifier to group outputs (e.g. seed101_frac0.5). If omitted, uses seed+fraction."
     )
     return parser.parse_args()
 
@@ -55,6 +61,20 @@ def load_emotion_dataset(tokenizer, train_fraction: float = 1.0, seed: int = 1):
     f"Test: {tokenized['test'].num_rows}"
     )
     return tokenized
+
+def get_run_id(args):
+    if args.run_id is not None:
+        return args.run_id
+    else:
+        return f"seed{args.seed}_frac{args.train_fraction}"
+    
+def save_dataset(dataset, path: str):
+    os.makedirs(path, exist_ok=True)
+    dataset.save_to_disk(path)
+
+def load_saved_dataset(path: str):
+    from datasets import load_from_disk
+    return load_from_disk(path)
 
 def load_model(model_name: str):
     return AutoModelForSequenceClassification.from_pretrained(
