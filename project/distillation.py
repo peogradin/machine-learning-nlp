@@ -4,7 +4,7 @@ from transformers import TrainingArguments, Trainer, AutoModelForSequenceClassif
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import compute_metrics, parse_args, get_run_id, load_saved_dataset
+from utils import compute_metrics, parse_args, get_run_id, load_saved_dataset, save_split_predictions
 
 teacher_name = "bert-base-uncased"
 student_name = "prajjwal1/bert-mini"
@@ -98,7 +98,8 @@ if  __name__ == "__main__":
     # start distillation training
     trainer.train()
     trainer.save_model(training_args.output_dir)
-
+    save_split_predictions(trainer, dataset["test"], os.path.join(training_args.output_dir, "test_predictions.jsonl"))
+    save_split_predictions(trainer, dataset["validation"], os.path.join(training_args.output_dir, "val_predictions.jsonl"))
     val_metrics = trainer.evaluate(eval_dataset=dataset["validation"])
     test_metrics = trainer.evaluate(eval_dataset=dataset["test"])
     metrics = {

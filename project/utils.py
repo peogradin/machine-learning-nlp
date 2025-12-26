@@ -5,6 +5,7 @@ from datasets import load_dataset
 import torch
 from transformers import AutoModelForSequenceClassification
 import numpy as np
+import json
 
 DEFAULT_OUTPUT_DIR = "./outputs"
 DEFAULT_NUM_EPOCHS = 2
@@ -93,3 +94,28 @@ def compute_metrics(eval_pred):
         "accuracy": accuracy.compute(predictions=preds, references=labels)["accuracy"],
         "f1": f1.compute(predictions=preds, references=labels, average="weighted")["f1"],
     }
+
+@torch.no_grad()
+def save_split_predictions(trainer, dataset_split, out_path: str, include_logits: bool = True):
+    """
+    Saves per-example predictions on a split (e.g. test/val) as JSONL.
+    Each row: idx, true, pred, (optional) logits
+    """
+    preds = trainer.predict(dataset_split)
+    logits = preds.predictions
+    labels = preds.label_ids
+    pred = logits.argmax(axis=-1)
+
+    # write jsonl
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w") as f:
+        for i in range(len(labels)):
+            row = {
+                "idx": int(i),
+                "true": int(labels[i]),
+                "pred": int(pred[i]),
+            }
+            if include_logits:
+                # keep it smaller; float16 is enough
+                row["logits"] = np.asarray(logits[i], dtype=np.float16).tolist()
+            f.write(json.dumps(row) + "\n")

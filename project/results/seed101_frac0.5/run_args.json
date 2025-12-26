@@ -1,0 +1,8 @@
+{
+  "output_dir": "./outputs",
+  "num_epochs": 20,
+  "seed": 101,
+  "train_fraction": 0.5,
+  "device": "cuda",
+  "run_id": null
+}

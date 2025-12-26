@@ -3,7 +3,7 @@
 import os
 import json
 
-from utils import load_emotion_dataset, load_model, compute_metrics, parse_args, get_run_id, save_dataset
+from utils import load_emotion_dataset, load_model, compute_metrics, parse_args, get_run_id, save_dataset, save_split_predictions
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
 # %%
@@ -71,6 +71,20 @@ def train_model(
 
     with open(os.path.join(output_dir, "log_history.json"), "w") as f:
         json.dump(trainer.state.log_history, f, indent=2)
+
+    save_split_predictions(
+        trainer,
+        dataset["validation"],
+        out_path=os.path.join(output_dir, "val_predictions.jsonl"),
+        include_logits=True,
+    )
+    save_split_predictions(
+        trainer,
+        dataset["test"],
+        out_path=os.path.join(output_dir, "test_predictions.jsonl"),
+        include_logits=True,
+    )
+
     return model, trainer, metrics
 
 
@@ -107,15 +121,15 @@ if __name__ == "__main__":
         train_fraction=1.0, # QUESTION: shouldn't we always train teacher on full data?
     )
 
-    print("\n" + "=" * 30 + " Training student base model " + "=" * 30)
-    student_base_model, _, student_base_metrics = train_model(
-        model_name=student_name,
-        dataset=student_dataset,
-        tokenizer=student_tokenizer,
-        output_dir=os.path.join(args.output_dir, run_id, "student_baseline_distilbert"),
-        epochs=args.num_epochs,
-        train_fraction=args.train_fraction,
-    )
+    # print("\n" + "=" * 30 + " Training student base model " + "=" * 30)
+    # student_base_model, _, student_base_metrics = train_model(
+    #     model_name=student_name,
+    #     dataset=student_dataset,
+    #     tokenizer=student_tokenizer,
+    #     output_dir=os.path.join(args.output_dir, run_id, "student_baseline_distilbert"),
+    #     epochs=args.num_epochs,
+    #     train_fraction=args.train_fraction,
+    # )
 
     print("\n" + "=" * 30 + " Training BERT tiny student base model " + "=" * 30)
     student_base_model, _, student_base_metrics = train_model(
