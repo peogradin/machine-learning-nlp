@@ -11,12 +11,14 @@ mkdir -p logs
 set -euo pipefail
 
 OUTPUT_DIR="./outputs"
+MODEL_NAME="bert-base-uncased"
 NUM_EPOCHS=20
 SEED=101
 TRAIN_FRACTION=1.0
 DEVICE="cuda"
-
 TRAIN_ARGS=(
+  --model-name "$MODEL_NAME"
+  --teacher
   --output-dir "$OUTPUT_DIR"
   --num-epochs "$NUM_EPOCHS"
   --seed "$SEED"

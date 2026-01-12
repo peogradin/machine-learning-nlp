@@ -1,0 +1,4 @@
+usage: training.py [-h] [--output-dir OUTPUT_DIR] [--num-epochs NUM_EPOCHS]
+                   [--seed SEED] [--train-fraction TRAIN_FRACTION]
+                   [--device DEVICE] [--run-id RUN_ID]
+training.py: error: unrecognized arguments: --model-name prajjwal1/bert-mini

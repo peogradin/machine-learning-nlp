@@ -58,7 +58,7 @@ if  __name__ == "__main__":
     print(f"Loaded student dataset from: {student_ds_path}")
 
     # load teacher from checkpoint
-    teacher_path = os.path.join(args.output_dir, run_id, "teacher_bert_base")
+    teacher_path = os.path.join(args.output_dir, f"seed{args.seed}_frac1.0", "teacher_bert_base")
     teacher = AutoModelForSequenceClassification.from_pretrained(teacher_path, num_labels=6).to(args.device)
     # load student distillbert 
     print(f"Loading student model {student_name} for distillation...")

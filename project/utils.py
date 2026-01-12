@@ -14,6 +14,8 @@ DEFAULT_SEED = 101
 def parse_args():
     parser = argparse.ArgumentParser(description="Distillation training script.")
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--model-name", type=str)
+    parser.add_argument("--teacher", action="store_true", default=False)
     parser.add_argument("--num-epochs", type=int, default=DEFAULT_NUM_EPOCHS)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--train-fraction", type=float, default=1.0)

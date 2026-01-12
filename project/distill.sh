@@ -10,10 +10,10 @@
 mkdir -p logs
 set -euo pipefail
 
-OUTPUT_DIR="./outputs"
+OUTPUT_DIR="./outputs2"
 NUM_EPOCHS=20
 SEED=101
-TRAIN_FRACTION=1.0
+TRAIN_FRACTION=0.05
 DEVICE="cuda"
 
 TRAIN_ARGS=(
