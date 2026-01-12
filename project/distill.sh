@@ -10,7 +10,7 @@
 mkdir -p logs
 set -euo pipefail
 
-OUTPUT_DIR="./outputs2"
+OUTPUT_DIR="./outputs"
 NUM_EPOCHS=20
 SEED=101
 TRAIN_FRACTION=0.05
