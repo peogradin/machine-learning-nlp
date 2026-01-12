@@ -539,11 +539,11 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", results_dir: str =
             frac = (n / total) if total > 0 else 0.0
             tick_labels.append(f"{cls}\n(n={n}, {100*frac:.1f}%)")
 
-        plt.ylim(0.0, 1.0)
+        plt.ylim(0.0, 1.2)
         plt.grid(True, axis="y", alpha=0.3)
         plt.xticks(x, tick_labels, rotation=0, ha="center")
         plt.ylabel("Accuracy per label")
-        plt.title(f"{split}: Per-label accuracy (Teacher vs Baseline vs Distilled) – {run_id}")
+        plt.title(f"{split}: Per-label accuracy (Teacher vs Baseline vs Distilled)")
         plt.legend()
         plt.tight_layout()
         plt.savefig(fig_path, dpi=200)
