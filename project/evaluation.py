@@ -229,12 +229,22 @@ def plot_training_history(outputs_dir: str = "./outputs", results_dir: str = "./
         # plot only eval points that exist
         dfc = dfc.dropna(subset=["epoch", "eval_accuracy"])
         if not dfc.empty:
+            fracs = sorted(dfc["train_fraction"].dropna().unique())
+            models_curves = sorted(dfc["model"].dropna().unique())
+            cmap = plt.get_cmap("tab10")
+            frac_colors = {frac: cmap(i / max(len(fracs), 1)) for i, frac in enumerate(fracs)}
+            alpha_levels = np.linspace(1.0, 0.5, num=len(models_curves)) if models_curves else []
+            model_alpha = {model: alpha_levels[i] for i, model in enumerate(models_curves)}
+
             plt.figure()
             # separate lines by (fraction, model)
             for (frac, model), sub in dfc.groupby(["train_fraction", "model"]):
                 sub = sub.sort_values("epoch")
-                plt.plot(sub["epoch"], sub["eval_accuracy"], marker="o",
-                         label=f"{model} (frac={frac})")
+                color = frac_colors.get(frac, None)
+                alpha = model_alpha.get(model, 1.0)
+                marker = "s" if model == "Baseline (BERT-mini)" else "o"
+                plt.plot(sub["epoch"], sub["eval_accuracy"], marker=marker,
+                         label=f"{model} (frac={frac})", color=color, alpha=alpha)
             plt.xlabel("Epoch")
             plt.ylabel("Validation accuracy")
             plt.title("Validation accuracy learning curves")
