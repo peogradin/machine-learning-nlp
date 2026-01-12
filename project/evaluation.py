@@ -126,7 +126,7 @@ def read_log_history_for_curve(model_dir: str) -> pd.DataFrame:
         df = df.sort_values("epoch")
     return df
 
-def plot_training_history(outputs_dir: str = "./outputs") -> None:
+def plot_training_history(outputs_dir: str = "./outputs", results_dir: str = "./results", exclude_teacher: bool = True) -> None:
     metrics_files = find_metrics_files(outputs_dir)
     if not metrics_files:
         raise FileNotFoundError(f"No metrics.json found under {outputs_dir}/seed*_frac*/")
@@ -136,7 +136,7 @@ def plot_training_history(outputs_dir: str = "./outputs") -> None:
 
     for mp in metrics_files:
         label = model_label_from_path(mp)
-        if label is None:
+        if label is None or (exclude_teacher and label == "Teacher (BERT-base)"):
             continue
 
         run_id = run_id_from_path(mp)
@@ -171,9 +171,9 @@ def plot_training_history(outputs_dir: str = "./outputs") -> None:
     df = df.sort_values(["train_fraction", "model"], ascending=[True, True])
 
     # Write summary tables
-    os.makedirs(outputs_dir, exist_ok=True)
-    csv_path = os.path.join(outputs_dir, "summary.csv")
-    md_path = os.path.join(outputs_dir, "summary.md")
+    os.makedirs(results_dir, exist_ok=True)
+    csv_path = os.path.join(results_dir, "summary.csv")
+    md_path = os.path.join(results_dir, "summary.md")
     df.to_csv(csv_path, index=False)
 
     # Markdown table (compact)
@@ -201,9 +201,9 @@ def plot_training_history(outputs_dir: str = "./outputs") -> None:
     plt.ylabel("Test accuracy")
     plt.title("Test accuracy vs train fraction")
     plt.legend()
-    outp = os.path.join(outputs_dir, "plot_accuracy_vs_fraction.png")
-    plt.savefig(outp, dpi=200, bbox_inches="tight")
-    print(f"Wrote: {outp}")
+    resultp = os.path.join(results_dir, "plot_accuracy_vs_fraction.png")
+    plt.savefig(resultp, dpi=200, bbox_inches="tight")
+    print(f"Wrote: {resultp}")
 
     # ---- Plot: f1 vs fraction (test) ----
     plt.figure()
@@ -217,9 +217,9 @@ def plot_training_history(outputs_dir: str = "./outputs") -> None:
     plt.ylabel("Test F1 (weighted)")
     plt.title("Test F1 vs train fraction")
     plt.legend()
-    outp = os.path.join(outputs_dir, "plot_f1_vs_fraction.png")
-    plt.savefig(outp, dpi=200, bbox_inches="tight")
-    print(f"Wrote: {outp}")
+    resultp = os.path.join(results_dir, "plot_f1_vs_fraction.png")
+    plt.savefig(resultp, dpi=200, bbox_inches="tight")
+    print(f"Wrote: {resultp}")
 
     # ---- Plot: learning curves (val accuracy vs epoch) ----
     if curves:
@@ -237,9 +237,9 @@ def plot_training_history(outputs_dir: str = "./outputs") -> None:
             plt.ylabel("Validation accuracy")
             plt.title("Validation accuracy learning curves")
             plt.legend(fontsize=8)
-            outp = os.path.join(outputs_dir, "plot_learning_curves.png")
-            plt.savefig(outp, dpi=200, bbox_inches="tight")
-            print(f"Wrote: {outp}")
+            resultp = os.path.join(results_dir, "plot_learning_curves.png")
+            plt.savefig(resultp, dpi=200, bbox_inches="tight")
+            print(f"Wrote: {resultp}")
         else:
             print("No eval_accuracy found in log_history.json files; skipping learning curve plot.")
     else:
@@ -249,9 +249,9 @@ def plot_training_history(outputs_dir: str = "./outputs") -> None:
 # Predictions-based evaluation (no model inference)
 # -----------------------------------------------
 
-def find_prediction_files(outputs_dir: str, split: str = "test") -> List[str]:
+def find_prediction_files(results_dir: str, split: str = "test") -> List[str]:
     # e.g. .../seed101_frac0.1/<model_dir>/test_predictions.jsonl
-    pattern = os.path.join(outputs_dir, "seed*_frac*", "*", f"{split}_predictions.jsonl")
+    pattern = os.path.join(results_dir, "seed*_frac*", "*", f"{split}_predictions.jsonl")
     return sorted(glob.glob(pattern))
 
 def model_dir_from_pred_path(pred_path: str) -> str:
@@ -311,7 +311,7 @@ def kl_divergence_rowwise(p: np.ndarray, q: np.ndarray, eps: float = 1e-12) -> n
     q = np.clip(q, eps, 1.0)
     return (p * (np.log(p) - np.log(q))).sum(axis=1)
 
-def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test") -> None:
+def deep_predictions_analysis(outputs_dir: str = "./outputs", results_dir: str = "./results", split: str = "test") -> None:
     pred_files = find_prediction_files(outputs_dir, split=split)
     if not pred_files:
         raise FileNotFoundError(f"No {split}_predictions.jsonl found under {outputs_dir}/seed*_frac*/")
@@ -425,7 +425,7 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
                 mean_kl_to_teacher = float(kl.mean())
 
         # Save confusion matrix plot
-        cm_fig = os.path.join(outputs_dir, run_id, model_dir, f"{split}_confusion_matrix.png")
+        cm_fig = os.path.join(results_dir, run_id, model_dir, f"{split}_confusion_matrix.png")
         os.makedirs(os.path.dirname(cm_fig), exist_ok=True)
         plt.figure()
         plt.imshow(cm, interpolation="nearest")
@@ -440,7 +440,7 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
         plt.close()
 
         # Save per-class accuracy bar plot (with support shown in x tick labels)
-        acc_fig = os.path.join(outputs_dir, run_id, model_dir, f"{split}_per_class_accuracy.png")
+        acc_fig = os.path.join(results_dir, run_id, model_dir, f"{split}_per_class_accuracy.png")
 
         tick_labels = []
         for cls, n, frac in zip(df_prf["class"], support.tolist(), df_prf["support_frac"].tolist()):
@@ -459,7 +459,7 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
         plt.close()
 
         # Save per-class table
-        prf_csv = os.path.join(outputs_dir, run_id, model_dir, f"{split}_per_class_metrics.csv")
+        prf_csv = os.path.join(results_dir, run_id, model_dir, f"{split}_per_class_metrics.csv")
         df_prf.to_csv(prf_csv, index=False)
 
         rows_summary.append({
@@ -482,7 +482,7 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
         })
 
     df_sum = pd.DataFrame(rows_summary).sort_values(["train_fraction", "model"])
-    out_csv = os.path.join(outputs_dir, f"{split}_preds_summary.csv")
+    out_csv = os.path.join(results_dir, f"{split}_preds_summary.csv")
     df_sum.to_csv(out_csv, index=False)
     print(f"Wrote: {out_csv}")
 
@@ -522,7 +522,7 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
             continue
 
         # Plot grouped bars
-        fig_path = os.path.join(outputs_dir, run_id, f"{split}_per_label_accuracy_grouped.png")
+        fig_path = os.path.join(results_dir, run_id, f"{split}_per_label_accuracy_grouped.png")
         os.makedirs(os.path.dirname(fig_path), exist_ok=True)
 
         x = np.arange(len(labels))
@@ -565,10 +565,10 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
     plt.ylabel("Agreement with teacher (pred label)")
     plt.title(f"{split}: Agreement with teacher vs fraction")
     plt.legend()
-    outp = os.path.join(outputs_dir, f"plot_{split}_agreement_with_teacher.png")
-    plt.savefig(outp, dpi=200, bbox_inches="tight")
+    resultp = os.path.join(results_dir, f"plot_{split}_agreement_with_teacher.png")
+    plt.savefig(resultp, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"Wrote: {outp}")
+    print(f"Wrote: {resultp}")
 
     # 2) KL(student||teacher) vs fraction (if logits exist)
     plt.figure()
@@ -585,10 +585,10 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
         plt.ylabel("Mean KL(student || teacher)")
         plt.title(f"{split}: KL divergence to teacher vs fraction")
         plt.legend()
-        outp = os.path.join(outputs_dir, f"plot_{split}_kl_to_teacher.png")
-        plt.savefig(outp, dpi=200, bbox_inches="tight")
+        resultp = os.path.join(results_dir, f"plot_{split}_kl_to_teacher.png")
+        plt.savefig(resultp, dpi=200, bbox_inches="tight")
         plt.close()
-        print(f"Wrote: {outp}")
+        print(f"Wrote: {resultp}")
     else:
         plt.close()
         print("No KL plots generated (missing logits in predictions).")
@@ -599,10 +599,11 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", split: str = "test
 # -----------------------------------------------
 if __name__ == "__main__":
     outputs = "./outputs"
+    results = "./results"
     plot_training_history(outputs)
     
     set_plot_style()
     # Deep analysis from saved predictions (no model inference)
-    deep_predictions_analysis(outputs, split="val")
-    deep_predictions_analysis(outputs, split="test")
+    deep_predictions_analysis(outputs, results, split="val")
+    deep_predictions_analysis(outputs, results, split="test")
     
