@@ -34,7 +34,7 @@ def set_plot_style():
 MODEL_DIR_TO_LABEL = {
     "teacher_bert_base": "Teacher (BERT-base)",
     # "student_baseline_distilbert": "Baseline (DistilBERT)",
-    "student_baseline_bert-tiny": "Baseline (BERT-mini)",
+    "student_baseline_bertmini": "Baseline (BERT-mini)",
     "distilled_model": "Distilled (BERT-mini)",
 }
 
@@ -494,7 +494,7 @@ def deep_predictions_analysis(outputs_dir: str = "./outputs", results_dir: str =
             continue
 
         # Collect per-class accuracies for the models we care about
-        model_order = ["teacher_bert_base", "student_baseline_bert-tiny", "distilled_model"]
+        model_order = ["teacher_bert_base", "student_baseline_bertmini", "distilled_model"]
         rows = []
         support = None
 
